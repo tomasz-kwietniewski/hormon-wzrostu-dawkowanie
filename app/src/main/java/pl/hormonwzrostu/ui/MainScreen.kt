@@ -17,12 +17,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import pl.hormonwzrostu.data.Schedule
 import pl.hormonwzrostu.data.formatMg
+import pl.hormonwzrostu.notify.isIgnoringBatteryOptimizations
+import pl.hormonwzrostu.notify.requestIgnoreBatteryOptimizations
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -49,6 +56,8 @@ fun MainScreen(
                 TodayDoseCard(schedule)
                 ScheduleSummaryCard(schedule)
             }
+
+            BatteryReliabilityCard()
 
             Button(
                 onClick = onOpenSettings,
@@ -157,5 +166,38 @@ private fun InfoRow(label: String, value: String) {
     Column {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+/** Pokazuje się tylko, gdy aplikacja nie jest zwolniona z optymalizacji baterii. */
+@Composable
+private fun BatteryReliabilityCard() {
+    val context = LocalContext.current
+    var ignoring by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
+
+    if (ignoring) return
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+        ),
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Zapewnij niezawodność", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Aby przypomnienia przychodziły punktualnie nawet po długim uśpieniu telefonu, " +
+                    "zezwól aplikacji na działanie bez ograniczeń baterii.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Button(
+                onClick = {
+                    requestIgnoreBatteryOptimizations(context)
+                    ignoring = isIgnoringBatteryOptimizations(context)
+                },
+            ) {
+                Text("Zezwól")
+            }
+        }
     }
 }

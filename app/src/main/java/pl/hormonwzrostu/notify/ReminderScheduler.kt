@@ -4,18 +4,24 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
+import pl.hormonwzrostu.MainActivity
 import pl.hormonwzrostu.data.Schedule
 import java.time.ZonedDateTime
 
 /**
- * Planuje pojedynczy, dokładny alarm na najbliższą godzinę przypomnienia.
+ * Planuje pojedynczy alarm typu „budzik" na najbliższą godzinę przypomnienia.
  * Po wystrzeleniu [ReminderReceiver] ustawia alarm ponownie na następny dzień.
+ *
+ * Używamy [AlarmManager.setAlarmClock], bo alarmy budzika są zwolnione z trybu Doze
+ * i z oszczędzania baterii — odpalają punktualnie nawet na agresywnych nakładkach
+ * (OnePlus, Samsung) bez konieczności zmiany ustawień przez użytkownika. Dodatkowo
+ * nie wymagają uprawnienia SCHEDULE_EXACT_ALARM.
  */
 object ReminderScheduler {
 
     const val ACTION_SHOW_DOSE = "pl.hormonwzrostu.action.SHOW_DOSE"
-    private const val REQUEST_CODE = 1001
+    private const val REQUEST_CODE_ALARM = 1001
+    private const val REQUEST_CODE_SHOW = 1002
 
     fun reschedule(context: Context, schedule: Schedule) {
         cancel(context)
@@ -23,37 +29,13 @@ object ReminderScheduler {
 
         val triggerAtMillis = nextTriggerMillis(schedule.reminderHour, schedule.reminderMinute)
         val alarmManager = context.getSystemService(AlarmManager::class.java)
-        val pendingIntent = buildPendingIntent(context)
 
-        val canExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-            alarmManager.canScheduleExactAlarms()
-
-        try {
-            if (canExact) {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerAtMillis,
-                    pendingIntent,
-                )
-            } else {
-                // Brak zgody na dokładne alarmy — działamy mniej dokładnie, ale niezawodnie.
-                alarmManager.setAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerAtMillis,
-                    pendingIntent,
-                )
-            }
-        } catch (_: SecurityException) {
-            alarmManager.setAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerAtMillis,
-                pendingIntent,
-            )
-        }
+        val alarmInfo = AlarmManager.AlarmClockInfo(triggerAtMillis, buildShowIntent(context))
+        alarmManager.setAlarmClock(alarmInfo, buildAlarmIntent(context))
     }
 
     fun cancel(context: Context) {
-        context.getSystemService(AlarmManager::class.java).cancel(buildPendingIntent(context))
+        context.getSystemService(AlarmManager::class.java).cancel(buildAlarmIntent(context))
     }
 
     /** Najbliższy moment (epoch ms) o godzinie hour:minute; jeśli minął dziś — jutro. */
@@ -66,13 +48,27 @@ object ReminderScheduler {
         return next.toInstant().toEpochMilli()
     }
 
-    private fun buildPendingIntent(context: Context): PendingIntent {
+    /** Wystrzeliwany o czasie — broadcast do [ReminderReceiver] pokazujący powiadomienie. */
+    private fun buildAlarmIntent(context: Context): PendingIntent {
         val intent = Intent(context, ReminderReceiver::class.java).apply {
             action = ACTION_SHOW_DOSE
         }
         return PendingIntent.getBroadcast(
             context,
-            REQUEST_CODE,
+            REQUEST_CODE_ALARM,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
+
+    /** Otwierany po tapnięciu w informację o alarmie (np. na ekranie blokady). */
+    private fun buildShowIntent(context: Context): PendingIntent {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        return PendingIntent.getActivity(
+            context,
+            REQUEST_CODE_SHOW,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
