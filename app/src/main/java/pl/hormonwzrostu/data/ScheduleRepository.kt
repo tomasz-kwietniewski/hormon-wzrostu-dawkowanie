@@ -1,6 +1,8 @@
 package pl.hormonwzrostu.data
 
 import android.content.Context
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /** Trwały zapis schematu w SharedPreferences (jako JSON). */
