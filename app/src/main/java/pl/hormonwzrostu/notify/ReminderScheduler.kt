@@ -29,9 +29,17 @@ object ReminderScheduler {
 
         val triggerAtMillis = nextTriggerMillis(schedule.reminderHour, schedule.reminderMinute)
         val alarmManager = context.getSystemService(AlarmManager::class.java)
+        val operation = buildAlarmIntent(context)
 
-        val alarmInfo = AlarmManager.AlarmClockInfo(triggerAtMillis, buildShowIntent(context))
-        alarmManager.setAlarmClock(alarmInfo, buildAlarmIntent(context))
+        // setAlarmClock daje najwyższy priorytet i odporność na Doze, ale na części
+        // urządzeń wymaga uprawnienia do dokładnych alarmów. Gdyby go zabrakło,
+        // łapiemy wyjątek i planujemy alarm mniej dokładny — aplikacja nigdy się nie wywali.
+        try {
+            val alarmInfo = AlarmManager.AlarmClockInfo(triggerAtMillis, buildShowIntent(context))
+            alarmManager.setAlarmClock(alarmInfo, operation)
+        } catch (_: SecurityException) {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
+        }
     }
 
     fun cancel(context: Context) {
