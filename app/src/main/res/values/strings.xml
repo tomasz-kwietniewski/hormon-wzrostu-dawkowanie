@@ -1,4 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Hormon Wzrostu Dawkowanie</string>
+    <string name="app_name">Growth Hormone Dosing</string>
+
+    <!-- Main screen -->
+    <string name="not_configured_title">Not configured</string>
+    <string name="not_configured_body">Fill in the child\'s name, medicine, daily dose, cycle length and start date to start receiving daily reminders.</string>
+    <string name="btn_settings">Settings / change dosing</string>
+    <string name="btn_configure">Set up</string>
+    <string name="btn_history">Intake history</string>
+    <string name="disclaimer">This tool only reminds you about the dose. It does not replace the medicine leaflet or your doctor\'s instructions and is not medical advice. Dosing is always determined by a doctor.</string>
+
+    <string name="today_dose_title">Today\'s dose</string>
+    <string name="cycle_not_started">The cycle hasn\'t started yet (start date is in the future).</string>
+    <string name="day_of_cycle">%1$s • day %2$d/%3$d</string>
+    <string name="last_dose_warning">⚠ Last dose from the ampoule — open a new one tomorrow.</string>
+    <string name="mg_value">%1$s mg</string>
+    <string name="btn_mark_given">Mark as given</string>
+    <string name="btn_unmark_given">Undo (not given)</string>
+    <string name="given_today_done">Given today ✓</string>
+
+    <string name="summary_reminder_at">Daily reminder at</string>
+    <string name="summary_scheme">Scheme</string>
+    <string name="summary_scheme_value">%1$s mg × %2$d days + %3$s mg</string>
+    <string name="summary_ampoule">Ampoule</string>
+    <string name="summary_ampoule_value">%1$s mg over %2$d days</string>
+    <string name="summary_start">Cycle start</string>
+    <string name="summary_notifications">Notifications</string>
+    <string name="state_enabled">enabled</string>
+    <string name="state_disabled">disabled</string>
+
+    <string name="battery_title">Make it reliable</string>
+    <string name="battery_body">So reminders arrive on time even after the phone has been idle for a long time, allow the app to run without battery restrictions.</string>
+    <string name="btn_allow">Allow</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">Dosing settings</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="field_child">Child\'s name</string>
+    <string name="field_med">Medicine name</string>
+    <string name="field_med_default">Growth hormone</string>
+    <string name="field_ampoule">Ampoule capacity (mg)</string>
+    <string name="field_daily">Daily dose (mg)</string>
+    <string name="field_days">Days per cycle (per ampoule)</string>
+    <string name="last_dose_calc_title">Calculated last dose</string>
+    <string name="last_dose_calc_value">%1$s mg × %2$d days + %3$s mg (day %4$d)</string>
+    <string name="last_dose_calc_hint">Fill in capacity, dose and number of days.</string>
+    <string name="start_day_button">Cycle start day: %1$s</string>
+    <string name="reminder_time_button">Reminder time: %1$s</string>
+    <string name="notifications_enabled">Notifications enabled</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_ok">OK</string>
+    <string name="err_child">Enter the child\'s name.</string>
+    <string name="err_ampoule">Enter a valid ampoule capacity.</string>
+    <string name="err_daily">Enter a valid daily dose.</string>
+    <string name="err_days">Enter a valid number of days.</string>
+    <string name="err_lastdose">Daily dose × days exceeds ampoule capacity — check the values.</string>
+    <string name="language_label">Language</string>
+    <string name="language_system">System default</string>
+
+    <!-- History screen -->
+    <string name="history_title">Intake history</string>
+    <string name="legend_given">Given</string>
+    <string name="legend_missed">Missed</string>
+    <string name="legend_today">Today</string>
+    <string name="legend_upcoming">Upcoming</string>
+    <string name="history_counts">Given: %1$d • Missed: %2$d</string>
+    <string name="btn_export_csv">Export CSV</string>
+    <string name="export_share_title">Export intake data</string>
+    <string name="history_empty">No schedule configured yet.</string>
+    <string name="prev_month">Previous month</string>
+    <string name="next_month">Next month</string>
+
+    <!-- Status values (also used in CSV) -->
+    <string name="status_given">given</string>
+    <string name="status_missed">missed</string>
+    <string name="status_pending">pending</string>
+
+    <!-- Notification -->
+    <string name="channel_name">Dose reminders</string>
+    <string name="channel_desc">Daily reminder about the medicine dose at a set time.</string>
+    <string name="notif_title">%1$s — today %2$s mg</string>
+    <string name="notif_text">Day %1$d/%2$d of the cycle. %3$s</string>
+    <string name="notif_last_suffix">\n⚠ Last dose from the ampoule — open a new one tomorrow.</string>
 </resources>

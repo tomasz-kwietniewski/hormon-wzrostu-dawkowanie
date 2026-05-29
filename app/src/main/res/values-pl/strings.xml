@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hormon Wzrostu Dawkowanie</string>
+
+    <!-- Ekran główny -->
+    <string name="not_configured_title">Brak konfiguracji</string>
+    <string name="not_configured_body">Uzupełnij imię dziecka, lek, dawkę dzienną, liczbę dni cyklu i datę startu, aby zacząć dostawać codzienne przypomnienia.</string>
+    <string name="btn_settings">Ustawienia / zmiana dawkowania</string>
+    <string name="btn_configure">Skonfiguruj</string>
+    <string name="btn_history">Historia podawania</string>
+    <string name="disclaimer">To narzędzie tylko przypomina o dawce. Nie zastępuje ulotki leku ani zaleceń lekarza prowadzącego i nie jest poradą medyczną. Dawkowanie zawsze ustala lekarz.</string>
+
+    <string name="today_dose_title">Dzisiejsza dawka</string>
+    <string name="cycle_not_started">Cykl jeszcze się nie rozpoczął (data startu w przyszłości).</string>
+    <string name="day_of_cycle">%1$s • dzień %2$d/%3$d</string>
+    <string name="last_dose_warning">⚠ Ostatnia dawka z ampułki — jutro otwórz nową.</string>
+    <string name="mg_value">%1$s mg</string>
+    <string name="btn_mark_given">Oznacz: podano</string>
+    <string name="btn_unmark_given">Cofnij (nie podano)</string>
+    <string name="given_today_done">Podano dzisiaj ✓</string>
+
+    <string name="summary_reminder_at">Przypomnienie codziennie o</string>
+    <string name="summary_scheme">Schemat</string>
+    <string name="summary_scheme_value">%1$s mg × %2$d dni + %3$s mg</string>
+    <string name="summary_ampoule">Ampułka</string>
+    <string name="summary_ampoule_value">%1$s mg na %2$d dni</string>
+    <string name="summary_start">Start cyklu</string>
+    <string name="summary_notifications">Powiadomienia</string>
+    <string name="state_enabled">włączone</string>
+    <string name="state_disabled">wyłączone</string>
+
+    <string name="battery_title">Zapewnij niezawodność</string>
+    <string name="battery_body">Aby przypomnienia przychodziły punktualnie nawet po długim uśpieniu telefonu, zezwól aplikacji na działanie bez ograniczeń baterii.</string>
+    <string name="btn_allow">Zezwól</string>
+
+    <!-- Ekran ustawień -->
+    <string name="settings_title">Ustawienia dawkowania</string>
+    <string name="btn_cancel">Anuluj</string>
+    <string name="field_child">Imię dziecka</string>
+    <string name="field_med">Nazwa leku</string>
+    <string name="field_med_default">Hormon wzrostu</string>
+    <string name="field_ampoule">Pojemność ampułki (mg)</string>
+    <string name="field_daily">Dawka dzienna (mg)</string>
+    <string name="field_days">Liczba dni cyklu (na 1 ampułkę)</string>
+    <string name="last_dose_calc_title">Wyliczona ostatnia dawka</string>
+    <string name="last_dose_calc_value">%1$s mg × %2$d dni + %3$s mg (dzień %4$d)</string>
+    <string name="last_dose_calc_hint">Uzupełnij pojemność, dawkę i liczbę dni.</string>
+    <string name="start_day_button">Dzień startu cyklu: %1$s</string>
+    <string name="reminder_time_button">Godzina przypomnienia: %1$s</string>
+    <string name="notifications_enabled">Powiadomienia włączone</string>
+    <string name="btn_save">Zapisz</string>
+    <string name="btn_ok">OK</string>
+    <string name="err_child">Podaj imię dziecka.</string>
+    <string name="err_ampoule">Podaj poprawną pojemność ampułki.</string>
+    <string name="err_daily">Podaj poprawną dawkę dzienną.</string>
+    <string name="err_days">Podaj poprawną liczbę dni cyklu.</string>
+    <string name="err_lastdose">Dawka dzienna × dni przekracza pojemność ampułki — sprawdź wartości.</string>
+    <string name="language_label">Język</string>
+    <string name="language_system">Domyślny systemu</string>
+
+    <!-- Ekran historii -->
+    <string name="history_title">Historia podawania</string>
+    <string name="legend_given">Podano</string>
+    <string name="legend_missed">Pominięto</string>
+    <string name="legend_today">Dziś</string>
+    <string name="legend_upcoming">Później</string>
+    <string name="history_counts">Podano: %1$d • Pominięto: %2$d</string>
+    <string name="btn_export_csv">Eksportuj CSV</string>
+    <string name="export_share_title">Eksport danych o podaniach</string>
+    <string name="history_empty">Brak skonfigurowanego schematu.</string>
+    <string name="prev_month">Poprzedni miesiąc</string>
+    <string name="next_month">Następny miesiąc</string>
+
+    <!-- Statusy (używane też w CSV) -->
+    <string name="status_given">podano</string>
+    <string name="status_missed">pominięto</string>
+    <string name="status_pending">oczekuje</string>
+
+    <!-- Powiadomienie -->
+    <string name="channel_name">Przypomnienia o dawce</string>
+    <string name="channel_desc">Codzienne przypomnienie o dawce leku o ustalonej godzinie.</string>
+    <string name="notif_title">%1$s — dziś %2$s mg</string>
+    <string name="notif_text">Dzień %1$d/%2$d cyklu. %3$s</string>
+    <string name="notif_last_suffix">\n⚠ Ostatnia dawka z ampułki — jutro otwórz nową ampułkę.</string>
+</resources>

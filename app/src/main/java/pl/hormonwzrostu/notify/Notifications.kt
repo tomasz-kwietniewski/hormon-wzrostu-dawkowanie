@@ -21,10 +21,10 @@ private const val NOTIFICATION_ID = 1
 fun ensureNotificationChannel(context: Context) {
     val channel = NotificationChannel(
         CHANNEL_ID,
-        "Przypomnienia o dawce",
+        context.getString(R.string.channel_name),
         NotificationManager.IMPORTANCE_HIGH,
     ).apply {
-        description = "Codzienne przypomnienie o dawce leku o ustalonej godzinie."
+        description = context.getString(R.string.channel_desc)
     }
     context.getSystemService(NotificationManager::class.java)
         .createNotificationChannel(channel)

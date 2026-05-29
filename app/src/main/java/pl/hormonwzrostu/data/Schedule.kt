@@ -79,8 +79,12 @@ data class Schedule(
             reminderMinute in 0..59
 }
 
-/** Formatuje miligramy po polsku, bez zbędnych zer (np. 0.8 -> "0,8"; 1.0 -> "1"). */
+/**
+ * Formatuje miligramy bez zbędnych zer, z separatorem dziesiętnym zgodnym z bieżącym
+ * językiem (np. PL: "0,8"; EN: "0.8"; 1.0 -> "1").
+ */
 fun formatMg(value: Double): String {
     val bd = BigDecimal(value).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros()
-    return bd.toPlainString().replace('.', ',')
+    val sep = java.text.DecimalFormatSymbols.getInstance(java.util.Locale.getDefault()).decimalSeparator
+    return bd.toPlainString().replace('.', sep)
 }

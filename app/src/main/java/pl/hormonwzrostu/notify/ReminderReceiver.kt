@@ -3,6 +3,7 @@ package pl.hormonwzrostu.notify
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import pl.hormonwzrostu.R
 import pl.hormonwzrostu.data.ScheduleRepository
 import pl.hormonwzrostu.data.formatMg
 import java.time.LocalDate
@@ -21,14 +22,19 @@ class ReminderReceiver : BroadcastReceiver() {
                 val dayNumber = dayIndex + 1
                 val isLast = schedule.isLastDayOfCycle(dayIndex)
 
-                val title = "${schedule.childName} — dziś ${formatMg(dose)} mg"
-                val text = buildString {
-                    append("Dzień $dayNumber/${schedule.daysPerCycle} cyklu. ")
-                    append(schedule.medName)
-                    if (isLast) {
-                        append("\n⚠ Ostatnia dawka z ampułki — jutro otwórz nową ampułkę.")
-                    }
-                }
+                val title = context.getString(
+                    R.string.notif_title,
+                    schedule.childName,
+                    formatMg(dose),
+                )
+                val medLine = schedule.medName +
+                    if (isLast) context.getString(R.string.notif_last_suffix) else ""
+                val text = context.getString(
+                    R.string.notif_text,
+                    dayNumber,
+                    schedule.daysPerCycle,
+                    medLine,
+                )
                 showDoseNotification(context, title, text)
             }
         }
