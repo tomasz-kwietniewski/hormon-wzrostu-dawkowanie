@@ -17,13 +17,35 @@ android {
         versionName = "1.1"
     }
 
+    // Stały klucz podpisujący dostarczany przez CI (zmienne środowiskowe z secretów).
+    // Lokalnie, gdy zmienne nie są ustawione, debug korzysta z domyślnego klucza debug.
+    val keystorePath: String? = System.getenv("KEYSTORE_PATH")
+    signingConfigs {
+        create("release") {
+            if (keystorePath != null) {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            if (keystorePath != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            if (keystorePath != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
