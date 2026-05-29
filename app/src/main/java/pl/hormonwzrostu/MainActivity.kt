@@ -12,6 +12,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
+import pl.hormonwzrostu.data.ScheduleRepository
+import pl.hormonwzrostu.notify.ReminderScheduler
 import pl.hormonwzrostu.ui.HormonTheme
 import pl.hormonwzrostu.ui.MainScreen
 import pl.hormonwzrostu.ui.SettingsScreen
@@ -28,6 +30,10 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
+
+        // Uzbrojenie alarmu przy każdym otwarciu (idempotentne) — gwarantuje,
+        // że przypomnienie jest zaplanowane także po reinstalacji aplikacji.
+        ReminderScheduler.reschedule(this, ScheduleRepository(this).load())
 
         setContent {
             HormonTheme {
