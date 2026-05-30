@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -151,16 +152,28 @@ fun HistoryScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    onToggleDay(date, true)
-                    selected = null
-                }) { Text(stringResource(R.string.btn_mark_given)) }
+                Button(
+                    onClick = {
+                        onToggleDay(date, true)
+                        selected = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = GivenColor,
+                        contentColor = Color.White,
+                    ),
+                ) { Text(stringResource(R.string.legend_given)) }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    onToggleDay(date, false)
-                    selected = null
-                }) { Text(stringResource(R.string.mark_not_given)) }
+                Button(
+                    onClick = {
+                        onToggleDay(date, false)
+                        selected = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MissedColor,
+                        contentColor = Color.White,
+                    ),
+                ) { Text(stringResource(R.string.legend_missed)) }
             },
         )
     }
@@ -293,19 +306,23 @@ private fun LegendItem(color: Color, label: String) {
     }
 }
 
-@Composable
+// Stałe, semantyczne kolory statusów — spójne dla kratek kalendarza i kropek legendy.
+private val GivenColor = Color(0xFF2E7D32)     // zielony — podano
+private val MissedColor = Color(0xFFC62828)    // czerwony — pominięto
+private val TodayColor = Color(0xFFF9A825)     // bursztynowy — dziś
+private val UpcomingColor = Color(0xFF4A4A4A)  // szary — później
+
 private fun statusColor(status: DayStatus): Color = when (status) {
-    DayStatus.GIVEN -> MaterialTheme.colorScheme.primary
-    DayStatus.MISSED -> MaterialTheme.colorScheme.errorContainer
-    DayStatus.TODAY_PENDING -> MaterialTheme.colorScheme.tertiary
-    DayStatus.UPCOMING -> MaterialTheme.colorScheme.surfaceVariant
+    DayStatus.GIVEN -> GivenColor
+    DayStatus.MISSED -> MissedColor
+    DayStatus.TODAY_PENDING -> TodayColor
+    DayStatus.UPCOMING -> UpcomingColor
     DayStatus.NONE -> Color.Transparent
 }
 
-@Composable
 private fun dayContentColor(status: DayStatus): Color = when (status) {
-    DayStatus.GIVEN -> MaterialTheme.colorScheme.onPrimary
-    DayStatus.MISSED -> MaterialTheme.colorScheme.onErrorContainer
-    DayStatus.TODAY_PENDING -> MaterialTheme.colorScheme.onTertiary
-    else -> MaterialTheme.colorScheme.onSurfaceVariant
+    DayStatus.TODAY_PENDING -> Color(0xFF1A1A1A) // ciemny tekst na bursztynie
+    DayStatus.UPCOMING -> Color(0xFFD6D6D6)
+    DayStatus.NONE -> Color(0xFF9A9A9A)
+    else -> Color.White // zielony/czerwony — biały tekst
 }
