@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import pl.hormonwzrostu.R
 import pl.hormonwzrostu.data.CsvLabels
 import pl.hormonwzrostu.data.DayStatus
@@ -75,7 +76,11 @@ fun HistoryScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.history_title)) },
-                navigationIcon = { TextButton(onClick = onBack) { Text("←") } },
+                navigationIcon = {
+                    TextButton(onClick = onBack) {
+                        Text("←", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                    }
+                },
             )
         },
     ) { padding ->
@@ -98,12 +103,16 @@ fun HistoryScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = { month = month.minusMonths(1) }) { Text("‹  ") }
+                TextButton(onClick = { month = month.minusMonths(1) }) {
+                    Text("‹", fontSize = 34.sp, fontWeight = FontWeight.Bold)
+                }
                 Text(
                     month.atDay(1).format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)),
                     style = MaterialTheme.typography.titleLarge,
                 )
-                TextButton(onClick = { month = month.plusMonths(1) }) { Text("  ›") }
+                TextButton(onClick = { month = month.plusMonths(1) }) {
+                    Text("›", fontSize = 34.sp, fontWeight = FontWeight.Bold)
+                }
             }
 
             CalendarGrid(
