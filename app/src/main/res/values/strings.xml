@@ -70,6 +70,9 @@
     <string name="history_empty">No schedule configured yet.</string>
     <string name="prev_month">Previous month</string>
     <string name="next_month">Next month</string>
+    <string name="mark_not_given">Mark as not given</string>
+    <string name="edit_day_info">Day %1$d/%2$d • %3$s mg</string>
+    <string name="edit_current">Now: %1$s</string>
 
     <!-- Status values (also used in CSV) -->
     <string name="status_given">given</string>

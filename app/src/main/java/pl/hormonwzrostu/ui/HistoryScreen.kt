@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,11 +42,13 @@ import pl.hormonwzrostu.data.DayStatus
 import pl.hormonwzrostu.data.Schedule
 import pl.hormonwzrostu.data.buildIntakeCsv
 import pl.hormonwzrostu.data.dayStatus
+import pl.hormonwzrostu.data.formatMg
 import pl.hormonwzrostu.util.shareCsv
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -60,6 +63,7 @@ fun HistoryScreen(
     val today = LocalDate.now()
     val locale = Locale.getDefault()
     var month by remember { mutableStateOf(YearMonth.from(today)) }
+    var selected by remember { mutableStateOf<LocalDate?>(null) }
 
     Scaffold(
         topBar = {
@@ -102,7 +106,7 @@ fun HistoryScreen(
                 intake = intake,
                 today = today,
                 locale = locale,
-                onToggleDay = onToggleDay,
+                onPickDay = { selected = it },
             )
 
             MonthSummary(month, schedule, intake, today)
@@ -124,7 +128,53 @@ fun HistoryScreen(
             }
         }
     }
+
+    selected?.let { date ->
+        val idx = schedule.dayIndexInCycle(date)
+        val status = dayStatus(schedule, date, today, intake)
+        AlertDialog(
+            onDismissRequest = { selected = null },
+            title = { Text(date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (idx != null) {
+                        Text(
+                            stringResource(
+                                R.string.edit_day_info,
+                                idx + 1,
+                                schedule.daysPerCycle,
+                                formatMg(schedule.doseForDay(idx)),
+                            ),
+                        )
+                    }
+                    Text(stringResource(R.string.edit_current, statusWord(status)))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onToggleDay(date, true)
+                    selected = null
+                }) { Text(stringResource(R.string.btn_mark_given)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    onToggleDay(date, false)
+                    selected = null
+                }) { Text(stringResource(R.string.mark_not_given)) }
+            },
+        )
+    }
 }
+
+@Composable
+private fun statusWord(status: DayStatus): String = stringResource(
+    when (status) {
+        DayStatus.GIVEN -> R.string.legend_given
+        DayStatus.MISSED -> R.string.legend_missed
+        DayStatus.TODAY_PENDING -> R.string.legend_today
+        else -> R.string.legend_upcoming
+    },
+)
 
 @Composable
 private fun CalendarGrid(
@@ -133,7 +183,7 @@ private fun CalendarGrid(
     intake: Set<String>,
     today: LocalDate,
     locale: Locale,
-    onToggleDay: (LocalDate, Boolean) -> Unit,
+    onPickDay: (LocalDate) -> Unit,
 ) {
     // Nagłówek dni tygodnia (poniedziałek-pierwszy).
     val weekDays = (0..6).map { DayOfWeek.MONDAY.plus(it.toLong()) }
@@ -163,7 +213,7 @@ private fun CalendarGrid(
                     val date = week.getOrNull(i)
                     Box(Modifier.weight(1f).aspectRatio(1f), contentAlignment = Alignment.Center) {
                         if (date != null) {
-                            DayCell(date, schedule, intake, today, onToggleDay)
+                            DayCell(date, schedule, intake, today, onPickDay)
                         }
                     }
                 }
@@ -178,11 +228,11 @@ private fun DayCell(
     schedule: Schedule,
     intake: Set<String>,
     today: LocalDate,
-    onToggleDay: (LocalDate, Boolean) -> Unit,
+    onPickDay: (LocalDate) -> Unit,
 ) {
     val status = dayStatus(schedule, date, today, intake)
     val bg = statusColor(status)
-    val canToggle = status != DayStatus.NONE && status != DayStatus.UPCOMING
+    val canPick = status != DayStatus.NONE
     val isToday = date.isEqual(today)
 
     Box(
@@ -190,7 +240,7 @@ private fun DayCell(
             .fillMaxSize()
             .padding(2.dp)
             .background(bg, RoundedCornerShape(10.dp))
-            .let { if (canToggle) it.clickable { onToggleDay(date, status != DayStatus.GIVEN) } else it },
+            .let { if (canPick) it.clickable { onPickDay(date) } else it },
         contentAlignment = Alignment.Center,
     ) {
         Text(
