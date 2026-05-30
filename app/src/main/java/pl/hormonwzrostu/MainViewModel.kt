@@ -52,4 +52,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun commentFor(date: LocalDate): String = comments[date.toString()] ?: ""
+
+    /** Ponowne wczytanie stanu z repozytorium (np. po imporcie kopii). */
+    fun reload() {
+        schedule = repository.load()
+        intake = repository.loadIntake()
+        comments = repository.loadComments()
+    }
 }

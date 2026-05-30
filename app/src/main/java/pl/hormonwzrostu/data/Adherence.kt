@@ -34,29 +34,28 @@ data class CsvLabels(
     val pending: String,
 )
 
-/** Cytowanie pola CSV (RFC 4180): otacza cudzysłowami i podwaja wewnętrzne cudzysłowy. */
-private fun csvQuote(s: String): String = "\"" + s.replace("\"", "\"\"") + "\""
+/** Pojedynczy wiersz zestawienia do eksportu (xlsx). */
+data class IntakeRow(
+    val date: String,
+    val day: Int,
+    val doseMg: Double,
+    val status: String,
+    val comment: String,
+)
 
 /**
- * Buduje zestawienie CSV od dnia startu do dziś włącznie, w języku aplikacji.
- * Format przyjazny Excelowi: separator ';', hint 'sep=;', liczby z lokalnym
- * separatorem dziesiętnym, pola tekstowe w cudzysłowach.
+ * Buduje wiersze zestawienia od dnia startu do dziś włącznie, ze statusami
+ * w języku aplikacji (etykiety przekazane w [labels]).
  */
-fun buildIntakeCsv(
+fun buildIntakeRows(
     schedule: Schedule,
     intake: Set<String>,
     comments: Map<String, String>,
     today: LocalDate,
     labels: CsvLabels,
-): String {
-    val sb = StringBuilder("sep=;\n")
-    sb.append(csvQuote(labels.date)).append(';')
-        .append(csvQuote(labels.day)).append(';')
-        .append(csvQuote(labels.dose)).append(';')
-        .append(csvQuote(labels.status)).append(';')
-        .append(csvQuote(labels.comment)).append('\n')
-
-    val start = schedule.startDate() ?: return sb.toString()
+): List<IntakeRow> {
+    val rows = mutableListOf<IntakeRow>()
+    val start = schedule.startDate() ?: return rows
     var date = start
     while (!date.isAfter(today)) {
         val idx = schedule.dayIndexInCycle(date)
@@ -66,14 +65,17 @@ fun buildIntakeCsv(
                 DayStatus.TODAY_PENDING -> labels.pending
                 else -> labels.missed
             }
-            val comment = comments[date.toString()] ?: ""
-            sb.append(date).append(';')
-                .append(idx + 1).append(';')
-                .append(formatMg(schedule.doseForDay(idx))).append(';')
-                .append(csvQuote(statusLabel)).append(';')
-                .append(csvQuote(comment)).append('\n')
+            rows.add(
+                IntakeRow(
+                    date = date.toString(),
+                    day = idx + 1,
+                    doseMg = schedule.doseForDay(idx),
+                    status = statusLabel,
+                    comment = comments[date.toString()] ?: "",
+                ),
+            )
         }
         date = date.plusDays(1)
     }
-    return sb.toString()
+    return rows
 }

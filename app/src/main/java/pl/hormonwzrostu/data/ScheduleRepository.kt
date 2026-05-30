@@ -47,6 +47,19 @@ class ScheduleRepository(context: Context) {
         prefs.edit().putString(KEY_LANG, tag).apply()
     }
 
+    /** Pełna kopia wszystkich danych jako JSON. */
+    fun exportBackup(): String =
+        json.encodeToString(Backup(1, load(), loadIntake(), loadComments(), loadLang()))
+
+    /** Wczytuje kopię z JSON; zwraca true przy powodzeniu. */
+    fun importBackup(text: String): Boolean = runCatching {
+        val backup = json.decodeFromString<Backup>(text)
+        save(backup.schedule)
+        saveIntake(backup.intake)
+        saveComments(backup.comments)
+        saveLang(backup.lang)
+    }.isSuccess
+
     companion object {
         private const val PREFS = "hormon_prefs"
         private const val KEY_SCHEDULE = "schedule"

@@ -1,5 +1,8 @@
 package pl.hormonwzrostu.ui
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,12 +36,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import pl.hormonwzrostu.R
 import pl.hormonwzrostu.data.Schedule
 import pl.hormonwzrostu.data.formatMg
+import pl.hormonwzrostu.util.shareBytes
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -51,6 +56,8 @@ fun SettingsScreen(
     initial: Schedule,
     currentLang: String,
     onSelectLang: (String) -> Unit,
+    onExportBackup: () -> String,
+    onImportBackup: (String) -> Boolean,
     onSave: (Schedule) -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -181,6 +188,8 @@ fun SettingsScreen(
 
             LanguageSelector(currentLang, onSelectLang)
 
+            BackupSection(onExportBackup, onImportBackup)
+
             errorRes?.let {
                 Text(stringResource(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
@@ -274,6 +283,57 @@ private fun LanguageSelector(currentTag: String, onSelect: (String) -> Unit) {
                 onClick = { onSelect("en") },
                 label = { Text("English") },
             )
+        }
+    }
+}
+
+@Composable
+private fun BackupSection(
+    onExportBackup: () -> String,
+    onImportBackup: (String) -> Boolean,
+) {
+    val context = LocalContext.current
+    val shareTitle = stringResource(R.string.backup_share_title)
+    val okMsg = stringResource(R.string.import_ok)
+    val failMsg = stringResource(R.string.import_fail)
+
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val text = runCatching {
+                context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
+            }.getOrNull()
+            val ok = text != null && onImportBackup(text)
+            Toast.makeText(context, if (ok) okMsg else failMsg, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(stringResource(R.string.backup_section), style = MaterialTheme.typography.labelLarge)
+        Text(
+            stringResource(R.string.backup_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        OutlinedButton(
+            onClick = {
+                val json = onExportBackup()
+                shareBytes(
+                    context,
+                    json.toByteArray(Charsets.UTF_8),
+                    "hormon_backup_${LocalDate.now()}.json",
+                    "application/json",
+                    shareTitle,
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.btn_export_backup))
+        }
+        OutlinedButton(
+            onClick = { importLauncher.launch("*/*") },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.btn_import_backup))
         }
     }
 }

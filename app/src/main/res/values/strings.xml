@@ -79,6 +79,17 @@
     <string name="csv_col_dose">Dose (mg)</string>
     <string name="csv_col_status">Status</string>
     <string name="csv_col_comment">Comment</string>
+    <string name="btn_export_xlsx">Export to Excel</string>
+    <string name="xlsx_sheet">History</string>
+
+    <!-- Backup -->
+    <string name="backup_section">Backup</string>
+    <string name="backup_hint">Save a backup file (e.g. to Google Drive). On a new phone, import it here to restore everything.</string>
+    <string name="btn_export_backup">Export backup</string>
+    <string name="btn_import_backup">Import backup</string>
+    <string name="backup_share_title">Backup file</string>
+    <string name="import_ok">Backup imported.</string>
+    <string name="import_fail">Import failed — invalid file.</string>
 
     <!-- Status values (also used in CSV) -->
     <string name="status_given">given</string>

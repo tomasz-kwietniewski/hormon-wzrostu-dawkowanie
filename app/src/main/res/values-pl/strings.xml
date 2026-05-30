@@ -79,6 +79,17 @@
     <string name="csv_col_dose">Dawka (mg)</string>
     <string name="csv_col_status">Status</string>
     <string name="csv_col_comment">Komentarz</string>
+    <string name="btn_export_xlsx">Eksportuj do Excela</string>
+    <string name="xlsx_sheet">Historia</string>
+
+    <!-- Kopia zapasowa -->
+    <string name="backup_section">Kopia zapasowa</string>
+    <string name="backup_hint">Zapisz plik kopii (np. na Google Drive). Na nowym telefonie zaimportuj go tutaj, aby przywrócić wszystko.</string>
+    <string name="btn_export_backup">Eksportuj kopię zapasową</string>
+    <string name="btn_import_backup">Importuj kopię zapasową</string>
+    <string name="backup_share_title">Plik kopii zapasowej</string>
+    <string name="import_ok">Kopia zaimportowana.</string>
+    <string name="import_fail">Import nieudany — błędny plik.</string>
 
     <!-- Statusy (używane też w CSV) -->
     <string name="status_given">podano</string>

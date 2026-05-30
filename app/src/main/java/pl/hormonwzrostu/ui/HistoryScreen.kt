@@ -43,10 +43,11 @@ import pl.hormonwzrostu.R
 import pl.hormonwzrostu.data.CsvLabels
 import pl.hormonwzrostu.data.DayStatus
 import pl.hormonwzrostu.data.Schedule
-import pl.hormonwzrostu.data.buildIntakeCsv
+import pl.hormonwzrostu.data.buildIntakeRows
 import pl.hormonwzrostu.data.dayStatus
 import pl.hormonwzrostu.data.formatMg
-import pl.hormonwzrostu.util.shareCsv
+import pl.hormonwzrostu.util.buildIntakeXlsx
+import pl.hormonwzrostu.util.shareBytes
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -130,16 +131,24 @@ fun HistoryScreen(
                 missed = stringResource(R.string.status_missed),
                 pending = stringResource(R.string.status_pending),
             )
+            val sheetName = stringResource(R.string.xlsx_sheet)
             Button(
                 onClick = {
-                    val csv = buildIntakeCsv(schedule, intake, comments, today, csvLabels)
+                    val rows = buildIntakeRows(schedule, intake, comments, today, csvLabels)
+                    val xlsx = buildIntakeXlsx(sheetName, csvLabels, rows)
                     val safeChild = schedule.childName.trim().ifBlank { "intake" }
                         .replace(Regex("[^A-Za-z0-9]+"), "_")
-                    shareCsv(context, csv, "hormon_${safeChild}_$today.csv", exportTitle)
+                    shareBytes(
+                        context,
+                        xlsx,
+                        "hormon_${safeChild}_$today.xlsx",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        exportTitle,
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(stringResource(R.string.btn_export_csv))
+                Text(stringResource(R.string.btn_export_xlsx))
             }
         }
     }

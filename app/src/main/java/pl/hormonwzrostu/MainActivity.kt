@@ -70,6 +70,15 @@ class MainActivity : ComponentActivity() {
                             repo.saveLang(tag)
                             activity.recreate()
                         },
+                        onExportBackup = { repo.exportBackup() },
+                        onImportBackup = { text ->
+                            val ok = repo.importBackup(text)
+                            if (ok) {
+                                vm.reload()
+                                activity.recreate()
+                            }
+                            ok
+                        },
                         onSave = {
                             vm.update(it)
                             screen = Screen.MAIN
