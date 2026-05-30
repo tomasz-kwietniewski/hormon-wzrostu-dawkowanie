@@ -1,6 +1,7 @@
 package pl.hormonwzrostu
 
 import android.Manifest
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -18,6 +19,7 @@ import pl.hormonwzrostu.ui.HistoryScreen
 import pl.hormonwzrostu.ui.HormonTheme
 import pl.hormonwzrostu.ui.MainScreen
 import pl.hormonwzrostu.ui.SettingsScreen
+import pl.hormonwzrostu.util.wrapLocale
 import java.time.LocalDate
 
 private enum class Screen { MAIN, SETTINGS, HISTORY }
@@ -26,6 +28,11 @@ class MainActivity : ComponentActivity() {
 
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* obsłużone w UI */ }
+
+    override fun attachBaseContext(newBase: Context) {
+        val tag = ScheduleRepository(newBase).loadLang()
+        super.attachBaseContext(wrapLocale(newBase, tag))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +45,9 @@ class MainActivity : ComponentActivity() {
         // Uzbrojenie alarmu przy każdym otwarciu (idempotentne) — gwarantuje,
         // że przypomnienie jest zaplanowane także po reinstalacji aplikacji.
         ReminderScheduler.reschedule(this, ScheduleRepository(this).load())
+
+        val activity = this
+        val repo = ScheduleRepository(this)
 
         setContent {
             HormonTheme {
@@ -55,6 +65,11 @@ class MainActivity : ComponentActivity() {
 
                     Screen.SETTINGS -> SettingsScreen(
                         initial = vm.schedule,
+                        currentLang = repo.loadLang(),
+                        onSelectLang = { tag ->
+                            repo.saveLang(tag)
+                            activity.recreate()
+                        },
                         onSave = {
                             vm.update(it)
                             screen = Screen.MAIN

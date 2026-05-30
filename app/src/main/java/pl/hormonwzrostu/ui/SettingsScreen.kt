@@ -1,6 +1,5 @@
 package pl.hormonwzrostu.ui
 
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.core.os.LocaleListCompat
 import pl.hormonwzrostu.R
 import pl.hormonwzrostu.data.Schedule
 import pl.hormonwzrostu.data.formatMg
@@ -51,6 +49,8 @@ import java.time.format.FormatStyle
 @Composable
 fun SettingsScreen(
     initial: Schedule,
+    currentLang: String,
+    onSelectLang: (String) -> Unit,
     onSave: (Schedule) -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -179,7 +179,7 @@ fun SettingsScreen(
                 Switch(checked = enabled, onCheckedChange = { enabled = it })
             }
 
-            LanguageSelector()
+            LanguageSelector(currentLang, onSelectLang)
 
             errorRes?.let {
                 Text(stringResource(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
@@ -255,32 +255,23 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun LanguageSelector() {
-    val current = AppCompatDelegate.getApplicationLocales()
-    val currentTag = if (current.isEmpty) "" else current.toLanguageTags().substringBefore('-').substringBefore(',')
-
-    fun apply(tag: String) {
-        AppCompatDelegate.setApplicationLocales(
-            if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag),
-        )
-    }
-
+private fun LanguageSelector(currentTag: String, onSelect: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(stringResource(R.string.language_label), style = MaterialTheme.typography.labelLarge)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
                 selected = currentTag == "",
-                onClick = { apply("") },
+                onClick = { onSelect("") },
                 label = { Text(stringResource(R.string.language_system)) },
             )
             FilterChip(
                 selected = currentTag == "pl",
-                onClick = { apply("pl") },
+                onClick = { onSelect("pl") },
                 label = { Text("Polski") },
             )
             FilterChip(
                 selected = currentTag == "en",
-                onClick = { apply("en") },
+                onClick = { onSelect("en") },
                 label = { Text("English") },
             )
         }

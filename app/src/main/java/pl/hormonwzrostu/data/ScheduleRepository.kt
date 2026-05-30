@@ -30,10 +30,18 @@ class ScheduleRepository(context: Context) {
         prefs.edit().putString(KEY_INTAKE, json.encodeToString(dates)).apply()
     }
 
+    /** Wybrany język UI: "" = systemowy, "pl", "en". */
+    fun loadLang(): String = prefs.getString(KEY_LANG, "") ?: ""
+
+    fun saveLang(tag: String) {
+        prefs.edit().putString(KEY_LANG, tag).apply()
+    }
+
     companion object {
         private const val PREFS = "hormon_prefs"
         private const val KEY_SCHEDULE = "schedule"
         private const val KEY_INTAKE = "intake_dates"
+        private const val KEY_LANG = "ui_lang"
         private val json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
