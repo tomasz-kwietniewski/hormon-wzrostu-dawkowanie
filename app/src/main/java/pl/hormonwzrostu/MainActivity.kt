@@ -80,7 +80,9 @@ class MainActivity : ComponentActivity() {
                     Screen.HISTORY -> HistoryScreen(
                         schedule = vm.schedule,
                         intake = vm.intake,
+                        comments = vm.comments,
                         onToggleDay = { date, given -> vm.setGiven(date, given) },
+                        onSetComment = { date, text -> vm.setComment(date, text) },
                         onBack = { screen = Screen.MAIN },
                     )
                 }

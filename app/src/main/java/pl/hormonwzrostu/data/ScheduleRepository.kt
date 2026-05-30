@@ -30,6 +30,16 @@ class ScheduleRepository(context: Context) {
         prefs.edit().putString(KEY_INTAKE, json.encodeToString(dates)).apply()
     }
 
+    /** Mapa data (ISO) -> komentarz do danego dnia. */
+    fun loadComments(): Map<String, String> {
+        val raw = prefs.getString(KEY_COMMENTS, null) ?: return emptyMap()
+        return runCatching { json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
+    }
+
+    fun saveComments(comments: Map<String, String>) {
+        prefs.edit().putString(KEY_COMMENTS, json.encodeToString(comments)).apply()
+    }
+
     /** Wybrany język UI: "" = systemowy, "pl", "en". */
     fun loadLang(): String = prefs.getString(KEY_LANG, "") ?: ""
 
@@ -41,6 +51,7 @@ class ScheduleRepository(context: Context) {
         private const val PREFS = "hormon_prefs"
         private const val KEY_SCHEDULE = "schedule"
         private const val KEY_INTAKE = "intake_dates"
+        private const val KEY_COMMENTS = "intake_comments"
         private const val KEY_LANG = "ui_lang"
         private val json = Json {
             ignoreUnknownKeys = true

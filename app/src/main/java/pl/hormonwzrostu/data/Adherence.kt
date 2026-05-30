@@ -1,7 +1,5 @@
 package pl.hormonwzrostu.data
 
-import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.LocalDate
 
 /** Status pojedynczego dnia względem schematu i zarejestrowanych podań. */
@@ -24,34 +22,56 @@ fun dayStatus(
     }
 }
 
-/** Dawka w formacie maszynowym do CSV (zawsze kropka dziesiętna). */
-private fun doseCsv(value: Double): String =
-    BigDecimal(value).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+/** Zlokalizowane etykiety nagłówków i statusów do eksportu CSV. */
+data class CsvLabels(
+    val date: String,
+    val day: String,
+    val dose: String,
+    val status: String,
+    val comment: String,
+    val given: String,
+    val missed: String,
+    val pending: String,
+)
+
+/** Cytowanie pola CSV (RFC 4180): otacza cudzysłowami i podwaja wewnętrzne cudzysłowy. */
+private fun csvQuote(s: String): String = "\"" + s.replace("\"", "\"\"") + "\""
 
 /**
- * Buduje zestawienie CSV od dnia startu do dziś włącznie:
- * date,day_of_cycle,dose_mg,status (status: given/missed/pending).
+ * Buduje zestawienie CSV od dnia startu do dziś włącznie, w języku aplikacji.
+ * Format przyjazny Excelowi: separator ';', hint 'sep=;', liczby z lokalnym
+ * separatorem dziesiętnym, pola tekstowe w cudzysłowach.
  */
 fun buildIntakeCsv(
     schedule: Schedule,
     intake: Set<String>,
+    comments: Map<String, String>,
     today: LocalDate,
+    labels: CsvLabels,
 ): String {
-    val sb = StringBuilder("date,day_of_cycle,dose_mg,status\n")
+    val sb = StringBuilder("sep=;\n")
+    sb.append(csvQuote(labels.date)).append(';')
+        .append(csvQuote(labels.day)).append(';')
+        .append(csvQuote(labels.dose)).append(';')
+        .append(csvQuote(labels.status)).append(';')
+        .append(csvQuote(labels.comment)).append('\n')
+
     val start = schedule.startDate() ?: return sb.toString()
     var date = start
     while (!date.isAfter(today)) {
         val idx = schedule.dayIndexInCycle(date)
         if (idx != null) {
-            val status = when (dayStatus(schedule, date, today, intake)) {
-                DayStatus.GIVEN -> "given"
-                DayStatus.TODAY_PENDING -> "pending"
-                else -> "missed"
+            val statusLabel = when (dayStatus(schedule, date, today, intake)) {
+                DayStatus.GIVEN -> labels.given
+                DayStatus.TODAY_PENDING -> labels.pending
+                else -> labels.missed
             }
-            sb.append(date).append(',')
-                .append(idx + 1).append(',')
-                .append(doseCsv(schedule.doseForDay(idx))).append(',')
-                .append(status).append('\n')
+            val comment = comments[date.toString()] ?: ""
+            sb.append(date).append(';')
+                .append(idx + 1).append(';')
+                .append(formatMg(schedule.doseForDay(idx))).append(';')
+                .append(csvQuote(statusLabel)).append(';')
+                .append(csvQuote(comment)).append('\n')
         }
         date = date.plusDays(1)
     }

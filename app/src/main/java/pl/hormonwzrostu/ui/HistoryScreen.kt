@@ -21,6 +21,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import pl.hormonwzrostu.R
+import pl.hormonwzrostu.data.CsvLabels
 import pl.hormonwzrostu.data.DayStatus
 import pl.hormonwzrostu.data.Schedule
 import pl.hormonwzrostu.data.buildIntakeCsv
@@ -58,7 +60,9 @@ import java.util.Locale
 fun HistoryScreen(
     schedule: Schedule,
     intake: Set<String>,
+    comments: Map<String, String>,
     onToggleDay: (LocalDate, Boolean) -> Unit,
+    onSetComment: (LocalDate, String) -> Unit,
     onBack: () -> Unit,
 ) {
     val today = LocalDate.now()
@@ -116,9 +120,19 @@ fun HistoryScreen(
 
             val context = LocalContext.current
             val exportTitle = stringResource(R.string.export_share_title)
+            val csvLabels = CsvLabels(
+                date = stringResource(R.string.csv_col_date),
+                day = stringResource(R.string.csv_col_day),
+                dose = stringResource(R.string.csv_col_dose),
+                status = stringResource(R.string.csv_col_status),
+                comment = stringResource(R.string.csv_col_comment),
+                given = stringResource(R.string.status_given),
+                missed = stringResource(R.string.status_missed),
+                pending = stringResource(R.string.status_pending),
+            )
             Button(
                 onClick = {
-                    val csv = buildIntakeCsv(schedule, intake, today)
+                    val csv = buildIntakeCsv(schedule, intake, comments, today, csvLabels)
                     val safeChild = schedule.childName.trim().ifBlank { "intake" }
                         .replace(Regex("[^A-Za-z0-9]+"), "_")
                     shareCsv(context, csv, "hormon_${safeChild}_$today.csv", exportTitle)
@@ -133,11 +147,13 @@ fun HistoryScreen(
     selected?.let { date ->
         val idx = schedule.dayIndexInCycle(date)
         val status = dayStatus(schedule, date, today, intake)
+        var comment by remember(date) { mutableStateOf(comments[date.toString()] ?: "") }
+
         AlertDialog(
             onDismissRequest = { selected = null },
             title = { Text(date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (idx != null) {
                         Text(
                             stringResource(
@@ -149,31 +165,46 @@ fun HistoryScreen(
                         )
                     }
                     Text(stringResource(R.string.edit_current, statusWord(status)))
+                    OutlinedTextField(
+                        value = comment,
+                        onValueChange = { comment = it },
+                        label = { Text(stringResource(R.string.field_comment)) },
+                        minLines = 2,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             },
             confirmButton = {
-                Button(
-                    onClick = {
-                        onToggleDay(date, true)
-                        selected = null
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = GivenColor,
-                        contentColor = Color.White,
-                    ),
-                ) { Text(stringResource(R.string.legend_given)) }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            onSetComment(date, comment)
+                            onToggleDay(date, true)
+                            selected = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = GivenColor,
+                            contentColor = Color.White,
+                        ),
+                    ) { Text(stringResource(R.string.legend_given)) }
+                    Button(
+                        onClick = {
+                            onSetComment(date, comment)
+                            onToggleDay(date, false)
+                            selected = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MissedColor,
+                            contentColor = Color.White,
+                        ),
+                    ) { Text(stringResource(R.string.legend_missed)) }
+                }
             },
             dismissButton = {
-                Button(
-                    onClick = {
-                        onToggleDay(date, false)
-                        selected = null
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MissedColor,
-                        contentColor = Color.White,
-                    ),
-                ) { Text(stringResource(R.string.legend_missed)) }
+                TextButton(onClick = {
+                    onSetComment(date, comment)
+                    selected = null
+                }) { Text(stringResource(R.string.btn_save)) }
             },
         )
     }

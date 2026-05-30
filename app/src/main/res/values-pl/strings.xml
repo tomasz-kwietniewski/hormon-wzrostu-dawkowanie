@@ -73,6 +73,12 @@
     <string name="mark_not_given">Oznacz: nie podano</string>
     <string name="edit_day_info">Dzień %1$d/%2$d • %3$s mg</string>
     <string name="edit_current">Teraz: %1$s</string>
+    <string name="field_comment">Komentarz (opcjonalnie)</string>
+    <string name="csv_col_date">Data</string>
+    <string name="csv_col_day">Dzień cyklu</string>
+    <string name="csv_col_dose">Dawka (mg)</string>
+    <string name="csv_col_status">Status</string>
+    <string name="csv_col_comment">Komentarz</string>
 
     <!-- Statusy (używane też w CSV) -->
     <string name="status_given">podano</string>

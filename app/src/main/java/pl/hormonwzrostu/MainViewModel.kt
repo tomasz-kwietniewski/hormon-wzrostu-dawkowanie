@@ -21,6 +21,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var intake by mutableStateOf(repository.loadIntake())
         private set
 
+    /** Mapa data (ISO) -> komentarz. */
+    var comments by mutableStateOf(repository.loadComments())
+        private set
+
     /** Zapisuje schemat i przeplanowuje codzienne przypomnienie. */
     fun update(newSchedule: Schedule) {
         schedule = newSchedule
@@ -37,4 +41,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         intake = updated
         repository.saveIntake(updated)
     }
+
+    /** Zapisuje komentarz do dnia (pusty = usuwa). */
+    fun setComment(date: LocalDate, text: String) {
+        val iso = date.toString()
+        val trimmed = text.trim()
+        val updated = if (trimmed.isEmpty()) comments - iso else comments + (iso to trimmed)
+        comments = updated
+        repository.saveComments(updated)
+    }
+
+    fun commentFor(date: LocalDate): String = comments[date.toString()] ?: ""
 }

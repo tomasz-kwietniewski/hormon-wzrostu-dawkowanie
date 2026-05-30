@@ -73,6 +73,12 @@
     <string name="mark_not_given">Mark as not given</string>
     <string name="edit_day_info">Day %1$d/%2$d • %3$s mg</string>
     <string name="edit_current">Now: %1$s</string>
+    <string name="field_comment">Comment (optional)</string>
+    <string name="csv_col_date">Date</string>
+    <string name="csv_col_day">Cycle day</string>
+    <string name="csv_col_dose">Dose (mg)</string>
+    <string name="csv_col_status">Status</string>
+    <string name="csv_col_comment">Comment</string>
 
     <!-- Status values (also used in CSV) -->
     <string name="status_given">given</string>
