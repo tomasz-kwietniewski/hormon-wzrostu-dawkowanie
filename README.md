@@ -19,8 +19,9 @@ Powstała na własne potrzeby rodzica dziecka w programie lekowym i jest udostę
 - ✅ **Śledzenie podań** — przycisk „Podano" na dziś oraz edycja dowolnego dnia w kalendarzu
   (podano / nie podano), także wstecz.
 - 📝 **Komentarz do dnia** — opcjonalne pole (np. powód pominięcia, okoliczności podania).
-- 📅 **Historia (kalendarz)** — miesiąc z kolorami: podano (zielony), pominięto (czerwony),
-  dziś (bursztyn), później (szary), plus licznik podano/pominięto.
+- 📅 **Historia (kalendarz) na ekranie głównym** — miesiąc z kolorami: podano (zielony),
+  pominięto (czerwony), dziś (bursztyn), później (szary), plus licznik podano/pominięto;
+  tapnięcie dnia otwiera okno edycji (status + komentarz).
 - 📊 **Eksport do Excela (.xlsx)** — nazwy kolumn i statusy w języku aplikacji, kolumna komentarza,
   poprawne polskie znaki.
 - 💾 **Kopia zapasowa** — ręczny eksport/import całej historii (JSON), np. na Google Drive;
