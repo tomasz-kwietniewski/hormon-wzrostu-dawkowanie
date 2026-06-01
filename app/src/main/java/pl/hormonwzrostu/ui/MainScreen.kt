@@ -97,6 +97,9 @@ fun MainScreen(
                 CalendarCard(schedule, intake, today, onPickDay = { selected = it })
                 ExportButton(schedule, intake, comments, today)
                 ScheduleSummaryCard(schedule)
+                Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.btn_settings))
+                }
             }
 
             BatteryReliabilityCard()

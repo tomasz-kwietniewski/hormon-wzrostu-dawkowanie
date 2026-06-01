@@ -253,19 +253,24 @@ fun DayEditDialog(
                         minLines = 2,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
                         Button(
                             onClick = { onConfirm(true, comment) },
+                            modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = GivenColor, contentColor = Color.White),
                         ) { Text(stringResource(R.string.legend_given)) }
                         Button(
                             onClick = { onConfirm(false, comment) },
+                            modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = MissedColor, contentColor = Color.White),
                         ) { Text(stringResource(R.string.legend_missed)) }
                     }
                     TextButton(
                         onClick = { onSaveComment(comment) },
-                        modifier = Modifier.align(Alignment.End),
+                        modifier = Modifier.fillMaxWidth(),
                     ) { Text(stringResource(R.string.btn_save)) }
                 }
 
