@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Growth Hormone Dosing</string>
+    <!-- Nazwa marki — celowo zawsze po polsku (etykieta skrótu na pulpicie
+         oraz tytuł w pasku), niezależnie od języka systemu i UI. -->
+    <string name="app_name" translatable="false">Hormon Wzrostu Dawkowanie</string>
 
     <!-- Main screen -->
     <string name="not_configured_title">Not configured</string>

@@ -27,6 +27,7 @@ Powstała na własne potrzeby rodzica dziecka w programie lekowym i jest udostę
 - 💾 **Kopia zapasowa** — ręczny eksport/import całej historii (JSON), np. na Google Drive;
   plus automatyczny backup Androida na konto Google.
 - 🌍 **Języki PL/EN** — automatycznie wg języka telefonu, z możliwością ręcznego przełączenia.
+  Sama nazwa aplikacji (etykieta skrótu na pulpicie) jest zawsze po polsku — to nazwa marki.
 - 🔒 **Prywatność** — dane wyłącznie lokalnie na urządzeniu, brak konta, brak sieci.
 
 ### Przykładowe schematy (suma zawsze = pojemność ampułki, np. 10 mg)

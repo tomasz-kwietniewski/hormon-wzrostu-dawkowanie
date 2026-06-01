@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Hormon Wzrostu Dawkowanie</string>
+    <!-- app_name jest zdefiniowana w values/strings.xml jako nazwa marki (translatable=false). -->
 
     <!-- Ekran główny -->
     <string name="not_configured_title">Brak konfiguracji</string>

@@ -52,12 +52,16 @@ Sklep Play wymaga **Android App Bundle (.aab)**, podpisanego.
 
 **Pełny opis (EN):** jak wyżej, wersja angielska (UI aplikacji ma już pełne tłumaczenie).
 
-## 4. Grafiki (do przygotowania)
+## 4. Grafiki (gotowe)
 
-- [ ] **Ikona** 512×512 PNG (mamy adaptacyjną ikonę w aplikacji — wyeksportować do 512×512).
-- [ ] **Grafika promocyjna (feature graphic)** 1024×500 PNG/JPG.
-- [ ] **Zrzuty ekranu telefonu** — min. 2 (zalecane 4–8): ekran główny z dzisiejszą dawką,
-      historia-kalendarz, ustawienia, okno edycji dnia.
+Wszystkie materiały w katalogu [`play-assets/`](../play-assets/):
+
+- [x] **Ikona** 512×512 PNG — `play-assets/icon-512.png`.
+- [x] **Grafika promocyjna (feature graphic)** 1024×500 PNG — `play-assets/feature-1024x500.png`.
+- [x] **Zrzuty ekranu telefonu** (4 szt., 1080×1920, 9:16) — `play-assets/screenshots/`:
+      ekran główny (kalendarz + dawka), okno dnia (podano/pominięto + komentarz),
+      ustawienia (auto‑liczenie dawki), język + kopie zapasowe.
+      Wierne makiety z UI; generowane przez `play-assets/screenshots/gen.py` (render Edge headless).
 
 ## 5. Klasyfikacja i odbiorcy
 
@@ -93,7 +97,7 @@ Sklep Play wymaga **Android App Bundle (.aab)**, podpisanego.
 - [ ] Ścieżka **Testy wewnętrzne** (Internal testing) — dodaj e-maile testerów (np. żona, inni rodzice);
       instalacja idzie ze Sklepu Play, więc działa też przy Google Advanced Protection.
 - [ ] Po testach: **Produkcja** (lub Testy zamknięte/otwarte).
-- [ ] `versionCode`/`versionName` rosną z każdym wydaniem (obecnie ustawiane w `app/build.gradle.kts`).
+- [ ] `versionCode`/`versionName` rosną z każdym wydaniem (w `app/build.gradle.kts`; obecnie **1.11 / 12**).
 
 ## 10. Uwagi techniczne
 
