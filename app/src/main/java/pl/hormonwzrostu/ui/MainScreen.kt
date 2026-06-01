@@ -2,7 +2,6 @@ package pl.hormonwzrostu.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,15 +9,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,14 +27,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import pl.hormonwzrostu.R
+import pl.hormonwzrostu.data.CsvLabels
 import pl.hormonwzrostu.data.Schedule
+import pl.hormonwzrostu.data.buildIntakeRows
+import pl.hormonwzrostu.data.dayStatus
 import pl.hormonwzrostu.data.formatMg
 import pl.hormonwzrostu.notify.isIgnoringBatteryOptimizations
 import pl.hormonwzrostu.notify.requestIgnoreBatteryOptimizations
+import pl.hormonwzrostu.util.buildIntakeXlsx
+import pl.hormonwzrostu.util.shareBytes
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -44,13 +49,29 @@ import java.time.format.FormatStyle
 @Composable
 fun MainScreen(
     schedule: Schedule,
-    givenToday: Boolean,
-    onToggleGivenToday: (Boolean) -> Unit,
+    intake: Set<String>,
+    comments: Map<String, String>,
+    onSetGiven: (LocalDate, Boolean) -> Unit,
+    onSetComment: (LocalDate, String) -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenHistory: () -> Unit,
 ) {
+    val today = LocalDate.now()
+    var selected by remember { mutableStateOf<LocalDate?>(null) }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.app_name)) },
+                actions = {
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_settings),
+                            contentDescription = stringResource(R.string.btn_settings),
+                        )
+                    }
+                },
+            )
+        },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -62,27 +83,23 @@ fun MainScreen(
         ) {
             if (!schedule.isValid()) {
                 NotConfiguredCard()
+                Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.btn_configure))
+                }
             } else {
-                TodayDoseCard(schedule, givenToday, onToggleGivenToday)
+                TodayDoseCard(
+                    schedule = schedule,
+                    intake = intake,
+                    today = today,
+                    onMark = { selected = today },
+                    onUndo = { onSetGiven(today, false) },
+                )
+                CalendarCard(schedule, intake, today, onPickDay = { selected = it })
+                ExportButton(schedule, intake, comments, today)
                 ScheduleSummaryCard(schedule)
             }
 
             BatteryReliabilityCard()
-
-            if (schedule.isValid()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(onClick = onOpenHistory, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.btn_history))
-                    }
-                    Button(onClick = onOpenSettings, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.btn_settings))
-                    }
-                }
-            } else {
-                Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.btn_configure))
-                }
-            }
 
             Text(
                 text = stringResource(R.string.disclaimer),
@@ -90,6 +107,26 @@ fun MainScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+
+    selected?.let { date ->
+        val status = dayStatus(schedule, date, today, intake)
+        DayEditDialog(
+            date = date,
+            schedule = schedule,
+            status = status,
+            initialComment = comments[date.toString()] ?: "",
+            onConfirm = { given, comment ->
+                onSetComment(date, comment)
+                onSetGiven(date, given)
+                selected = null
+            },
+            onSaveComment = { comment ->
+                onSetComment(date, comment)
+                selected = null
+            },
+            onDismiss = { selected = null },
+        )
     }
 }
 
@@ -106,17 +143,16 @@ private fun NotConfiguredCard() {
 @Composable
 private fun TodayDoseCard(
     schedule: Schedule,
-    givenToday: Boolean,
-    onToggleGivenToday: (Boolean) -> Unit,
+    intake: Set<String>,
+    today: LocalDate,
+    onMark: () -> Unit,
+    onUndo: () -> Unit,
 ) {
-    val today = LocalDate.now()
     val dayIndex = schedule.dayIndexInCycle(today)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
     ) {
         Column(
             Modifier.fillMaxWidth().padding(24.dp),
@@ -129,7 +165,7 @@ private fun TodayDoseCard(
                 Text(stringResource(R.string.cycle_not_started), style = MaterialTheme.typography.bodyMedium)
             } else {
                 val dose = schedule.doseForDay(dayIndex)
-                val isLast = schedule.isLastDayOfCycle(dayIndex)
+                val given = intake.contains(today.toString())
 
                 Text(
                     stringResource(R.string.mg_value, formatMg(dose)),
@@ -140,7 +176,7 @@ private fun TodayDoseCard(
                     stringResource(R.string.day_of_cycle, schedule.childName, dayIndex + 1, schedule.daysPerCycle),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                if (isLast) {
+                if (schedule.isLastDayOfCycle(dayIndex)) {
                     Text(
                         stringResource(R.string.last_dose_warning),
                         style = MaterialTheme.typography.bodyMedium,
@@ -149,30 +185,63 @@ private fun TodayDoseCard(
                 }
 
                 Spacer(Modifier.padding(2.dp))
-                if (givenToday) {
-                    FilledTonalButton(onClick = { onToggleGivenToday(false) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.given_today_done))
+                if (given) {
+                    Text(
+                        stringResource(R.string.given_today_done),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                    TextButton(onClick = onUndo) {
+                        Text(stringResource(R.string.btn_unmark_given))
                     }
                 } else {
-                    Button(
-                        onClick = { onToggleGivenToday(true) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                        ),
-                    ) {
+                    Button(onClick = onMark, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.btn_mark_given))
                     }
                 }
-                if (givenToday) {
-                    Text(
-                        stringResource(R.string.btn_unmark_given),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
         }
+    }
+}
+
+@Composable
+private fun ExportButton(
+    schedule: Schedule,
+    intake: Set<String>,
+    comments: Map<String, String>,
+    today: LocalDate,
+) {
+    val context = LocalContext.current
+    val exportTitle = stringResource(R.string.export_share_title)
+    val sheetName = stringResource(R.string.xlsx_sheet)
+    val labels = CsvLabels(
+        date = stringResource(R.string.csv_col_date),
+        day = stringResource(R.string.csv_col_day),
+        dose = stringResource(R.string.csv_col_dose),
+        status = stringResource(R.string.csv_col_status),
+        comment = stringResource(R.string.csv_col_comment),
+        given = stringResource(R.string.status_given),
+        missed = stringResource(R.string.status_missed),
+        pending = stringResource(R.string.status_pending),
+    )
+    Button(
+        onClick = {
+            val rows = buildIntakeRows(schedule, intake, comments, today, labels)
+            val xlsx = buildIntakeXlsx(sheetName, labels, rows)
+            val safeChild = schedule.childName.trim().ifBlank { "intake" }
+                .replace(Regex("[^A-Za-z0-9]+"), "_")
+            shareBytes(
+                context,
+                xlsx,
+                "hormon_${safeChild}_$today.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                exportTitle,
+            )
+        },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(stringResource(R.string.btn_export_xlsx))
     }
 }
 
@@ -226,9 +295,7 @@ private fun BatteryReliabilityCard() {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(stringResource(R.string.battery_title), style = MaterialTheme.typography.titleMedium)

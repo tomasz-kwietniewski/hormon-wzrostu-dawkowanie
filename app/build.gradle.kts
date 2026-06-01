@@ -13,8 +13,8 @@ android {
         applicationId = "pl.hormonwzrostu"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "1.8"
+        versionCode = 10
+        versionName = "1.9"
     }
 
     // Stały klucz podpisujący dostarczany przez CI (zmienne środowiskowe z secretów).

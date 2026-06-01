@@ -15,14 +15,12 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.hormonwzrostu.data.ScheduleRepository
 import pl.hormonwzrostu.notify.ReminderScheduler
-import pl.hormonwzrostu.ui.HistoryScreen
 import pl.hormonwzrostu.ui.HormonTheme
 import pl.hormonwzrostu.ui.MainScreen
 import pl.hormonwzrostu.ui.SettingsScreen
 import pl.hormonwzrostu.util.wrapLocale
-import java.time.LocalDate
 
-private enum class Screen { MAIN, SETTINGS, HISTORY }
+private enum class Screen { MAIN, SETTINGS }
 
 class MainActivity : ComponentActivity() {
 
@@ -57,10 +55,11 @@ class MainActivity : ComponentActivity() {
                 when (screen) {
                     Screen.MAIN -> MainScreen(
                         schedule = vm.schedule,
-                        givenToday = vm.isGiven(LocalDate.now()),
-                        onToggleGivenToday = { vm.setGiven(LocalDate.now(), it) },
+                        intake = vm.intake,
+                        comments = vm.comments,
+                        onSetGiven = { date, given -> vm.setGiven(date, given) },
+                        onSetComment = { date, text -> vm.setComment(date, text) },
                         onOpenSettings = { screen = Screen.SETTINGS },
-                        onOpenHistory = { screen = Screen.HISTORY },
                     )
 
                     Screen.SETTINGS -> SettingsScreen(
@@ -84,15 +83,6 @@ class MainActivity : ComponentActivity() {
                             screen = Screen.MAIN
                         },
                         onCancel = { screen = Screen.MAIN },
-                    )
-
-                    Screen.HISTORY -> HistoryScreen(
-                        schedule = vm.schedule,
-                        intake = vm.intake,
-                        comments = vm.comments,
-                        onToggleDay = { date, given -> vm.setGiven(date, given) },
-                        onSetComment = { date, text -> vm.setComment(date, text) },
-                        onBack = { screen = Screen.MAIN },
                     )
                 }
             }
