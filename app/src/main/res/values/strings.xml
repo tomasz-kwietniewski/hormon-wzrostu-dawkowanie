@@ -57,6 +57,7 @@
     <string name="err_lastdose">Ampoule capacity must be greater than or equal to the daily dose.</string>
     <string name="language_label">Language</string>
     <string name="language_system">System default</string>
+    <string name="version_label">Version %1$s (%2$d)</string>
 
     <!-- History screen -->
     <string name="history_title">Intake history</string>

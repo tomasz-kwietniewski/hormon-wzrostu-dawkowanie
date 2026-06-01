@@ -39,7 +39,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import pl.hormonwzrostu.BuildConfig
 import pl.hormonwzrostu.R
 import pl.hormonwzrostu.data.Schedule
 import pl.hormonwzrostu.data.computeCycleDays
@@ -214,6 +216,14 @@ fun SettingsScreen(
             ) {
                 Text(stringResource(R.string.btn_save))
             }
+
+            Text(
+                stringResource(R.string.version_label, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 
