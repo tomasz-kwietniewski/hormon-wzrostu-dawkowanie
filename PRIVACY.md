@@ -11,7 +11,7 @@ nie korzysta z internetu, nie zawiera reklam ani narzędzi analitycznych, nie wy
 ## Jakie dane są przetwarzane
 
 Dane wpisane przez użytkownika i przechowywane lokalnie (w pamięci aplikacji):
-- imię dziecka, nazwa leku, parametry dawkowania (pojemność ampułki, dawka, liczba dni, data startu),
+- imię dziecka, nazwa leku, parametry dawkowania (pojemność ampułki, dawka dzienna, data startu),
 - godzina przypomnienia, oznaczenia podania leku w poszczególnych dniach, opcjonalne komentarze,
 - wybrany język interfejsu.
 

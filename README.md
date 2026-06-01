@@ -14,8 +14,9 @@ Powstała na własne potrzeby rodzica dziecka w programie lekowym i jest udostę
 ## Funkcje
 
 - ⏰ **Codzienne powiadomienie** o wybranej godzinie (alarm typu „budzik", odporny na tryb Doze).
-- 🧮 **Auto-liczenie ostatniej dawki** — podajesz pojemność ampułki, dawkę dzienną i liczbę dni,
-  a aplikacja sama liczy „resztę" na ostatni dzień cyklu i powtarza cykl.
+- 🧮 **Auto-liczenie cyklu** — podajesz tylko pojemność ampułki i dawkę dzienną, a aplikacja sama
+  wylicza **długość cyklu** oraz „resztę" na ostatni dzień (i powtarza cykl). Ostatnia dawka mieści
+  się zawsze w przedziale ⟨dawka, 2 × dawka) — gdy w ampułce zostaje mniej niż dwie pełne dawki.
 - ✅ **Śledzenie podań** — przycisk „Podano" na dziś oraz edycja dowolnego dnia w kalendarzu
   (podano / nie podano), także wstecz.
 - 📝 **Komentarz do dnia** — opcjonalne pole (np. powód pominięcia, okoliczności podania).
@@ -38,7 +39,7 @@ Powstała na własne potrzeby rodzica dziecka w programie lekowym i jest udostę
 | 0,7 mg | 13 | 0,9 mg | 14 |
 | 0,8 mg | 11 | 1,2 mg | 12 |
 
-W aplikacji wpisujesz tylko pojemność (10 mg), dawkę dzienną i liczbę dni — resztę policzy sama.
+W aplikacji wpisujesz tylko pojemność (10 mg) i dawkę dzienną — długość cyklu i ostatnią dawkę policzy sama.
 
 ## Wymagania
 

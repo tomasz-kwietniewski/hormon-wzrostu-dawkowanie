@@ -6,7 +6,7 @@
 
     <!-- Main screen -->
     <string name="not_configured_title">Not configured</string>
-    <string name="not_configured_body">Fill in the child\'s name, medicine, daily dose, cycle length and start date to start receiving daily reminders.</string>
+    <string name="not_configured_body">Fill in the child\'s name, medicine, daily dose and start date to start receiving daily reminders.</string>
     <string name="btn_settings">Settings / change dosing</string>
     <string name="btn_configure">Set up</string>
     <string name="btn_history">Intake history</string>
@@ -43,10 +43,9 @@
     <string name="field_med_default">Growth hormone</string>
     <string name="field_ampoule">Ampoule capacity (mg)</string>
     <string name="field_daily">Daily dose (mg)</string>
-    <string name="field_days">Days per cycle (per ampoule)</string>
-    <string name="last_dose_calc_title">Calculated last dose</string>
-    <string name="last_dose_calc_value">%1$s mg × %2$d days + %3$s mg (day %4$d)</string>
-    <string name="last_dose_calc_hint">Fill in capacity, dose and number of days.</string>
+    <string name="last_dose_calc_title">Calculated cycle and last dose</string>
+    <string name="last_dose_calc_value">%1$s mg × %2$d days + %3$s mg (cycle %4$d days)</string>
+    <string name="last_dose_calc_hint">Fill in ampoule capacity and daily dose.</string>
     <string name="start_day_button">Cycle start day: %1$s</string>
     <string name="reminder_time_button">Reminder time: %1$s</string>
     <string name="notifications_enabled">Notifications enabled</string>
@@ -55,8 +54,7 @@
     <string name="err_child">Enter the child\'s name.</string>
     <string name="err_ampoule">Enter a valid ampoule capacity.</string>
     <string name="err_daily">Enter a valid daily dose.</string>
-    <string name="err_days">Enter a valid number of days.</string>
-    <string name="err_lastdose">Daily dose × days exceeds ampoule capacity — check the values.</string>
+    <string name="err_lastdose">Ampoule capacity must be greater than or equal to the daily dose.</string>
     <string name="language_label">Language</string>
     <string name="language_system">System default</string>
 

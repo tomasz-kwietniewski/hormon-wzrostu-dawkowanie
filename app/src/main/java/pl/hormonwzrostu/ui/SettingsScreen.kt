@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import pl.hormonwzrostu.R
 import pl.hormonwzrostu.data.Schedule
+import pl.hormonwzrostu.data.computeCycleDays
 import pl.hormonwzrostu.data.formatMg
 import pl.hormonwzrostu.util.shareBytes
 import java.time.Instant
@@ -66,7 +67,6 @@ fun SettingsScreen(
     var medName by remember { mutableStateOf(initial.medName) }
     var ampoule by remember { mutableStateOf(formatMg(initial.ampouleMg)) }
     var dailyDose by remember { mutableStateOf(formatMg(initial.dailyDoseMg)) }
-    var days by remember { mutableStateOf(initial.daysPerCycle.toString()) }
     var startDate by remember { mutableStateOf(initial.startDate() ?: LocalDate.now()) }
     var hour by remember { mutableStateOf(initial.reminderHour) }
     var minute by remember { mutableStateOf(initial.reminderMinute) }
@@ -78,8 +78,13 @@ fun SettingsScreen(
 
     val ampouleVal = ampoule.toDoubleOrNullPl()
     val dailyVal = dailyDose.toDoubleOrNullPl()
-    val daysVal = days.toIntOrNull()
-    val lastDose = if (ampouleVal != null && dailyVal != null && daysVal != null && daysVal >= 1) {
+    // Długość cyklu liczy się automatycznie z pojemności i dawki dziennej (nie wpisuje się jej ręcznie).
+    val daysVal = if (ampouleVal != null && dailyVal != null) {
+        computeCycleDays(ampouleVal, dailyVal).takeIf { it >= 1 }
+    } else {
+        null
+    }
+    val lastDose = if (ampouleVal != null && dailyVal != null && daysVal != null) {
         ampouleVal - (daysVal - 1) * dailyVal
     } else {
         null
@@ -133,15 +138,6 @@ fun SettingsScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
-            OutlinedTextField(
-                value = days,
-                onValueChange = { days = it },
-                label = { Text(stringResource(R.string.field_days)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.last_dose_calc_title), style = MaterialTheme.typography.labelLarge)
@@ -196,7 +192,7 @@ fun SettingsScreen(
 
             Button(
                 onClick = {
-                    val problem = validate(childName, ampouleVal, dailyVal, daysVal, lastDose)
+                    val problem = validate(childName, ampouleVal, dailyVal, lastDose)
                     if (problem != null) {
                         errorRes = problem
                     } else {
@@ -206,7 +202,6 @@ fun SettingsScreen(
                                 medName = medName.trim().ifBlank { defaultMed },
                                 ampouleMg = ampouleVal!!,
                                 dailyDoseMg = dailyVal!!,
-                                daysPerCycle = daysVal!!,
                                 startDateIso = startDate.toString(),
                                 reminderHour = hour,
                                 reminderMinute = minute,
@@ -343,13 +338,11 @@ private fun validate(
     childName: String,
     ampoule: Double?,
     daily: Double?,
-    days: Int?,
     lastDose: Double?,
 ): Int? = when {
     childName.isBlank() -> R.string.err_child
     ampoule == null || ampoule <= 0 -> R.string.err_ampoule
     daily == null || daily <= 0 -> R.string.err_daily
-    days == null || days < 1 -> R.string.err_days
     lastDose == null || lastDose <= 0 -> R.string.err_lastdose
     else -> null
 }

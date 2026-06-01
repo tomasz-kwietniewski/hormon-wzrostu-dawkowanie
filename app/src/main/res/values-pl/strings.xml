@@ -4,7 +4,7 @@
 
     <!-- Ekran główny -->
     <string name="not_configured_title">Brak konfiguracji</string>
-    <string name="not_configured_body">Uzupełnij imię dziecka, lek, dawkę dzienną, liczbę dni cyklu i datę startu, aby zacząć dostawać codzienne przypomnienia.</string>
+    <string name="not_configured_body">Uzupełnij imię dziecka, lek, dawkę dzienną i datę startu, aby zacząć dostawać codzienne przypomnienia.</string>
     <string name="btn_settings">Ustawienia / zmiana dawkowania</string>
     <string name="btn_configure">Skonfiguruj</string>
     <string name="btn_history">Historia podawania</string>
@@ -41,10 +41,9 @@
     <string name="field_med_default">Hormon wzrostu</string>
     <string name="field_ampoule">Pojemność ampułki (mg)</string>
     <string name="field_daily">Dawka dzienna (mg)</string>
-    <string name="field_days">Liczba dni cyklu (na 1 ampułkę)</string>
-    <string name="last_dose_calc_title">Wyliczona ostatnia dawka</string>
-    <string name="last_dose_calc_value">%1$s mg × %2$d dni + %3$s mg (dzień %4$d)</string>
-    <string name="last_dose_calc_hint">Uzupełnij pojemność, dawkę i liczbę dni.</string>
+    <string name="last_dose_calc_title">Wyliczony cykl i ostatnia dawka</string>
+    <string name="last_dose_calc_value">%1$s mg × %2$d dni + %3$s mg (cykl %4$d dni)</string>
+    <string name="last_dose_calc_hint">Uzupełnij pojemność ampułki i dawkę dzienną.</string>
     <string name="start_day_button">Dzień startu cyklu: %1$s</string>
     <string name="reminder_time_button">Godzina przypomnienia: %1$s</string>
     <string name="notifications_enabled">Powiadomienia włączone</string>
@@ -53,8 +52,7 @@
     <string name="err_child">Podaj imię dziecka.</string>
     <string name="err_ampoule">Podaj poprawną pojemność ampułki.</string>
     <string name="err_daily">Podaj poprawną dawkę dzienną.</string>
-    <string name="err_days">Podaj poprawną liczbę dni cyklu.</string>
-    <string name="err_lastdose">Dawka dzienna × dni przekracza pojemność ampułki — sprawdź wartości.</string>
+    <string name="err_lastdose">Pojemność ampułki musi być większa lub równa dawce dziennej.</string>
     <string name="language_label">Język</string>
     <string name="language_system">Domyślny systemu</string>
 
