@@ -114,7 +114,7 @@ fun MainScreen(
                     onUndo = { onSetGiven(today, false) },
                 )
                 CalendarCard(schedule, intake, today, onPickDay = { selected = it })
-                ExportButton(schedule, intake, comments, today)
+                ExportButton(schedule, intake, doses, comments, today)
                 ScheduleSummaryCard(schedule)
                 Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.btn_settings))
@@ -249,6 +249,7 @@ private fun TodayDoseCard(
 private fun ExportButton(
     schedule: Schedule,
     intake: Set<String>,
+    doses: Map<String, Double>,
     comments: Map<String, String>,
     today: LocalDate,
 ) {
@@ -267,7 +268,7 @@ private fun ExportButton(
     )
     Button(
         onClick = {
-            val rows = buildIntakeRows(schedule, intake, comments, today, labels)
+            val rows = buildIntakeRows(schedule, intake, doses, comments, today, labels)
             val xlsx = buildIntakeXlsx(sheetName, labels, rows)
             val safeChild = schedule.childName.trim().ifBlank { "intake" }
                 .replace(Regex("[^A-Za-z0-9]+"), "_")

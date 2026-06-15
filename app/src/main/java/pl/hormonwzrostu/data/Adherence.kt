@@ -34,46 +34,42 @@ data class CsvLabels(
     val pending: String,
 )
 
-/** Pojedynczy wiersz zestawienia do eksportu (xlsx). */
+/** Pojedynczy wiersz zestawienia do eksportu (xlsx). day/doseMg = null dla dni bez podania. */
 data class IntakeRow(
     val date: String,
-    val day: Int,
-    val doseMg: Double,
+    val day: Int?,
+    val doseMg: Double?,
     val status: String,
     val comment: String,
 )
 
 /**
- * Buduje wiersze zestawienia od dnia startu do dziś włącznie, ze statusami
- * w języku aplikacji (etykiety przekazane w [labels]).
+ * Buduje wiersze zestawienia od dnia startu do dziś włącznie. Dzień cyklu i dawka pochodzą
+ * z faktycznego przebiegu podań ([buildTimeline]); dni pominięte/oczekujące mają puste
+ * dzień i dawkę. Etykiety statusów wg [labels].
  */
 fun buildIntakeRows(
     schedule: Schedule,
     intake: Set<String>,
+    doses: Map<String, Double>,
     comments: Map<String, String>,
     today: LocalDate,
     labels: CsvLabels,
 ): List<IntakeRow> {
     val rows = mutableListOf<IntakeRow>()
     val start = schedule.startDate() ?: return rows
+    val byDate = buildTimeline(schedule, intake, doses).associateBy { it.date }
     var date = start
     while (!date.isAfter(today)) {
-        val idx = schedule.dayIndexInCycle(date)
-        if (idx != null) {
-            val statusLabel = when (dayStatus(schedule, date, today, intake)) {
-                DayStatus.GIVEN -> labels.given
-                DayStatus.TODAY_PENDING -> labels.pending
-                else -> labels.missed
+        val iso = date.toString()
+        val comment = comments[iso] ?: ""
+        when (dayStatus(schedule, date, today, intake)) {
+            DayStatus.GIVEN -> {
+                val ev = byDate[date]
+                rows.add(IntakeRow(iso, ev?.dayInCycle, ev?.actualMg, labels.given, comment))
             }
-            rows.add(
-                IntakeRow(
-                    date = date.toString(),
-                    day = idx + 1,
-                    doseMg = schedule.doseForDay(idx),
-                    status = statusLabel,
-                    comment = comments[date.toString()] ?: "",
-                ),
-            )
+            DayStatus.TODAY_PENDING -> rows.add(IntakeRow(iso, null, null, labels.pending, comment))
+            else -> rows.add(IntakeRow(iso, null, null, labels.missed, comment))
         }
         date = date.plusDays(1)
     }
