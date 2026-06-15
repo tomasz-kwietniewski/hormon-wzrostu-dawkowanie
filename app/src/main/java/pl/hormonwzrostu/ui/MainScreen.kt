@@ -42,6 +42,7 @@ import pl.hormonwzrostu.R
 import pl.hormonwzrostu.data.CsvLabels
 import pl.hormonwzrostu.data.Schedule
 import pl.hormonwzrostu.data.buildIntakeRows
+import pl.hormonwzrostu.data.buildTimeline
 import pl.hormonwzrostu.data.dayStatus
 import pl.hormonwzrostu.data.formatMg
 import pl.hormonwzrostu.data.nextDose
@@ -137,13 +138,23 @@ fun MainScreen(
 
     selected?.let { date ->
         val status = dayStatus(schedule, date, today, intake)
+        val timeline = buildTimeline(schedule, intake, doses)
+        val event = timeline.firstOrNull { it.date == date }
+        // Planowana dawka dla tego dnia: z przebiegu (gdy podano) lub projekcja na ten dzień.
+        val plannedMg = event?.plannedMg
+            ?: nextDose(schedule, intake, doses, date)?.plannedMg
+            ?: schedule.dailyDoseMg
         DayEditDialog(
             date = date,
             schedule = schedule,
             status = status,
+            dayInCycle = event?.dayInCycle,
+            plannedMg = plannedMg,
+            actualMg = doses[date.toString()],
             initialComment = comments[date.toString()] ?: "",
-            onConfirm = { given, comment ->
+            onConfirm = { given, comment, doseMg ->
                 onSetComment(date, comment)
+                onSetActualDose(date, if (given) doseMg else null)
                 onSetGiven(date, given)
                 selected = null
             },
