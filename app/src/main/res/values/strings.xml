@@ -39,6 +39,7 @@
     <!-- Settings screen -->
     <string name="settings_title">Dosing settings</string>
     <string name="btn_cancel">Cancel</string>
+    <string name="btn_back">Back</string>
     <string name="field_child">Child\'s name</string>
     <string name="field_med">Medicine name</string>
     <string name="field_med_default">Growth hormone</string>

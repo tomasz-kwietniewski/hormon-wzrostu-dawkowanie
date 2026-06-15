@@ -37,6 +37,7 @@
     <!-- Ekran ustawień -->
     <string name="settings_title">Ustawienia dawkowania</string>
     <string name="btn_cancel">Anuluj</string>
+    <string name="btn_back">Cofnij</string>
     <string name="field_child">Imię dziecka</string>
     <string name="field_med">Nazwa leku</string>
     <string name="field_med_default">Hormon wzrostu</string>
