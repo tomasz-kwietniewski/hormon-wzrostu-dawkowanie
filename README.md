@@ -17,16 +17,19 @@ Aplikacja jest **publicznie dostępna w Google Play**:
 
 **[play.google.com/store/apps/details?id=pl.hormonwzrostu](https://play.google.com/store/apps/details?id=pl.hormonwzrostu)**
 
-Wydawca: **Z Sensem Tomasz Kwietniewski** (konto organizacji). Aktualna wersja: **1.15**.
+Wydawca: **Z Sensem Tomasz Kwietniewski** (konto organizacji). Aktualna wersja: **1.17**.
 
 ## Funkcje
 
 - ⏰ **Codzienne powiadomienie** o wybranej godzinie (alarm typu „budzik", odporny na tryb Doze).
-- 🧮 **Auto-liczenie cyklu** — podajesz tylko pojemność ampułki i dawkę dzienną, a aplikacja sama
-  wylicza **długość cyklu** oraz „resztę" na ostatni dzień (i powtarza cykl). Ostatnia dawka mieści
-  się zawsze w przedziale ⟨dawka, 2 × dawka) — gdy w ampułce zostaje mniej niż dwie pełne dawki.
+- 🧮 **Cykl liczony według podań** — podajesz tylko pojemność ampułki i dawkę dzienną; aplikacja
+  prowadzi cykl na podstawie **faktycznie podanych dawek** i realnego zużycia ampułki. **Pominięty
+  dzień nie przesuwa cyklu** — ten sam dzień czeka, aż dawka zostanie podana. Ostatni dzień dostaje
+  „resztę" z ampułki (dawka ostatniego dnia mieści się w ⟨dawka, 2 × dawka)).
 - ✅ **Śledzenie podań** — przycisk „Podano" na dziś oraz edycja dowolnego dnia w kalendarzu
   (podano / nie podano), także wstecz.
+- ✏️ **Korekta podanej dawki** — jeśli danego dnia podasz inną dawkę niż z rozpiski (np. mniejszą),
+  zapiszesz to w oknie dnia; wpływa to na realne zużycie ampułki i moment zakończenia cyklu.
 - 📝 **Komentarz do dnia** — opcjonalne pole (np. powód pominięcia, okoliczności podania).
 - 📅 **Historia (kalendarz) na ekranie głównym** — miesiąc z kolorami: podano (zielony),
   pominięto (czerwony), dziś (bursztyn), później (szary), plus licznik podano/pominięto;
@@ -128,7 +131,8 @@ MIT — zobacz [LICENSE](LICENSE).
 **Growth Hormone Dosing** is an Android app that sends a **daily reminder** about a child's growth
 hormone dose (or any medicine split from one ampoule over a cycle), lets you **mark doses as given**,
 keeps a **calendar history** with optional per-day **comments**, exports to **Excel (.xlsx)**, and
-supports **manual backup/restore** plus Android Auto Backup. UI in **English/Polish** (follows the
+supports **manual backup/restore** plus Android Auto Backup. The **cycle advances by actual doses**
+(a skipped day does not move it forward), and you can **correct the actual dose** given on any day. UI in **English/Polish** (follows the
 phone language, switchable in Settings). **Data stays on the device** — no account, no network.
 
 > This tool only reminds about a dose entered by a parent. It does not replace the medicine leaflet
