@@ -3,6 +3,11 @@
 Praktyczna lista kontrolna i gotowe teksty do wystawienia aplikacji **Hormon Wzrostu Dawkowanie**
 w Sklepie Play.
 
+> **STATUS (2026-06-15): OPUBLIKOWANA PUBLICZNIE na produkcji** — 177 krajów, wersja 1.15,
+> wydawana z **konta organizacji** (Z Sensem Tomasz Kwietniewski).
+> Link: https://play.google.com/store/apps/details?id=pl.hormonwzrostu
+> Najważniejszy wniosek z procesu (konto organizacji dla aplikacji zdrowotnej) — patrz **sekcja 11**.
+
 ## 1. Wymagania wstępne
 
 - [ ] Konto **Google Play Developer** (jednorazowa opłata 25 USD).
@@ -97,7 +102,7 @@ Wszystkie materiały w katalogu [`play-assets/`](../play-assets/):
 - [ ] Ścieżka **Testy wewnętrzne** (Internal testing) — dodaj e-maile testerów (np. żona, inni rodzice);
       instalacja idzie ze Sklepu Play, więc działa też przy Google Advanced Protection.
 - [ ] Po testach: **Produkcja** (lub Testy zamknięte/otwarte).
-- [ ] `versionCode`/`versionName` rosną z każdym wydaniem (w `app/build.gradle.kts`; obecnie **1.11 / 12**).
+- [x] `versionCode`/`versionName` rosną z każdym wydaniem (w `app/build.gradle.kts`; obecnie **1.15 / 16**).
 
 ## 10. Uwagi techniczne
 
@@ -105,3 +110,25 @@ Wszystkie materiały w katalogu [`play-assets/`](../play-assets/):
 - `minSdk` = 26 (Android 8.0+).
 - Minifikacja (R8) jest wyłączona — można włączyć później dla mniejszego rozmiaru (są reguły
   ProGuard dla kotlinx.serialization).
+
+## 11. ⚠️ Konto organizacji — kluczowe dla aplikacji zdrowotnych (wnioski z procesu)
+
+Aplikacje **zdrowotne/medyczne** (kategoria Medical + deklaracja Health „Medication and treatment
+management") mogą być publikowane **wyłącznie z konta organizacji** — konto **osobiste** jest
+odrzucane („Violation of Play Console Requirements", polityka od 31.08.2024). Tak było tutaj:
+
+- Z konta **osobistego**: testy wewnętrzne działały, ale produkcja/tor zamknięty → **odrzucenie**.
+- Rozwiązanie: **konwersja konta na organizację** (Developer account → zmiana typu konta). Wymaga:
+  - numeru **D‑U‑N‑S** (darmowy z Dun & Bradstreet, bywa do 30 dni — tu nadany od ręki: 436779442),
+  - zweryfikowanej **strony firmowej** (np. `tomaszkwietniewski.pl`),
+  - **dokumentu rejestrowego**: dla jednoosobowej działalności → **zaświadczenie REGON**
+    (z [wyszukiwarkaregon.stat.gov.pl](https://wyszukiwarkaregon.stat.gov.pl/)); **KRS** jest dla spółek,
+  - utworzenia **nowego profilu płatności** typu organizacja (D‑U‑N‑S/typ konta nie da się zmienić
+    na istniejącym profilu). Konta NIE zakłada się od nowa, $25 nie płaci ponownie.
+- Po konwersji **dane kontaktowe organizacji (nazwa, adres, telefon, e‑mail) są PUBLICZNE** na
+  profilu dewelopera (wymóg UE) — przy koncie organizacji nie da się tego ukryć.
+- ✅ Konta organizacji są **zwolnione z wymogu 12 testerów × 14 dni** (ten dotyczy tylko kont
+  osobistych) → produkcja dostępna od razu, bez zamkniętego testu.
+- ⏳ **Synchronizacja statusu organizacji w systemach egzekwujących trwa do 72 h** (potwierdził
+  support Play). Wysłanie ponownie PRZED upływem 72 h → kolejne automatyczne odrzucenia (to nie błąd!).
+  Po 72 h i wysłaniu z **podbitym versionCode** → recenzja przeszła, aplikacja opublikowana publicznie.

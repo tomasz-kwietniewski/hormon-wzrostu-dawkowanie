@@ -11,6 +11,14 @@ Powstała na własne potrzeby rodzica dziecka w programie lekowym i jest udostę
 
 🇬🇧 *English summary at the bottom.*
 
+## 📲 Pobierz z Google Play
+
+Aplikacja jest **publicznie dostępna w Google Play**:
+
+**[play.google.com/store/apps/details?id=pl.hormonwzrostu](https://play.google.com/store/apps/details?id=pl.hormonwzrostu)**
+
+Wydawca: **Z Sensem Tomasz Kwietniewski** (konto organizacji). Aktualna wersja: **1.15**.
+
 ## Funkcje
 
 - ⏰ **Codzienne powiadomienie** o wybranej godzinie (alarm typu „budzik", odporny na tryb Doze).
@@ -46,9 +54,10 @@ W aplikacji wpisujesz tylko pojemność (10 mg) i dawkę dzienną — długość
 - Android 8.0 (API 26) lub nowszy.
 - Kotlin + Jetpack Compose (Material 3), `AlarmManager` (dokładny alarm budzika).
 
-## Pobranie gotowego APK
+## Pobranie APK (dla deweloperów / testów)
 
-Każdy build w **GitHub Actions** (zakładka *Actions* → *Build APK*) zawiera artefakt
+Najprościej zainstalować ze **Sklepu Play** (link wyżej). Dla deweloperów: każdy build w
+**GitHub Actions** (zakładka *Actions* → *Build APK*) zawiera artefakt
 `HormonWzrostuDawkowanie-debug` z plikiem `app-debug.apk`.
 
 ## Instalacja
@@ -103,8 +112,10 @@ repozytorium; lokalnie bez nich build debug używa domyślnego klucza debug.
 
 ## Publikacja w Google Play
 
-Plan i lista kontrolna: [docs/PLAY_STORE.md](docs/PLAY_STORE.md). Polityka prywatności:
-[PRIVACY.md](PRIVACY.md).
+✅ **Opublikowana publicznie** na produkcji (czerwiec 2026), w 177 krajach, wydawana z **konta
+organizacji** — aplikacje zdrowotne/medyczne mogą być publikowane wyłącznie z konta organizacji
+(nie osobistego). Plan, lista kontrolna i wnioski z całego procesu: [docs/PLAY_STORE.md](docs/PLAY_STORE.md).
+Polityka prywatności: [PRIVACY.md](PRIVACY.md).
 
 ## Licencja
 
