@@ -116,7 +116,10 @@ fun MainScreen(
                     doses = doses,
                     today = today,
                     onMark = { selected = today },
-                    onUndo = { onSetGiven(today, false) },
+                    onUndo = {
+                        onSetActualDose(today, null)
+                        onSetGiven(today, false)
+                    },
                 )
                 CalendarCard(schedule, intake, today, onPickDay = { selected = it })
                 ExportButton(schedule, intake, doses, comments, today)
@@ -204,8 +207,14 @@ private fun TodayDoseCard(
     onMark: () -> Unit,
     onUndo: () -> Unit,
 ) {
-    val next = nextDose(schedule, intake, doses, today)
     val given = intake.contains(today.toString())
+    // Gdy dziś już podano — stan z faktycznego przebiegu (uwzględnia korektę dawki);
+    // gdy jeszcze nie podano — projekcja następnej dawki.
+    val event = if (given) buildTimeline(schedule, intake, doses).firstOrNull { it.date == today } else null
+    val next = if (event == null) nextDose(schedule, intake, doses, today) else null
+    val dayInCycle = event?.dayInCycle ?: next?.dayInCycle
+    val shownDose = event?.actualMg ?: next?.plannedMg
+    val isLast = event?.isLastInCycle ?: next?.isLastInCycle ?: false
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -218,12 +227,9 @@ private fun TodayDoseCard(
         ) {
             Text(stringResource(R.string.today_dose_title), style = MaterialTheme.typography.titleMedium)
 
-            if (next == null) {
+            if (dayInCycle == null || shownDose == null) {
                 Text(stringResource(R.string.cycle_not_started), style = MaterialTheme.typography.bodyMedium)
             } else {
-                // Jeśli dziś już podano, pokaż faktyczną dawkę; w przeciwnym razie planowaną.
-                val shownDose = if (given) (doses[today.toString()] ?: next.plannedMg) else next.plannedMg
-
                 Text(
                     stringResource(R.string.mg_value, formatMg(shownDose)),
                     style = MaterialTheme.typography.displayMedium,
@@ -233,12 +239,12 @@ private fun TodayDoseCard(
                     stringResource(
                         R.string.day_of_cycle_est,
                         schedule.childName,
-                        next.dayInCycle,
+                        dayInCycle,
                         schedule.daysPerCycle,
                     ),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                if (next.isLastInCycle) {
+                if (isLast) {
                     Text(
                         stringResource(R.string.last_dose_warning),
                         style = MaterialTheme.typography.bodyMedium,
