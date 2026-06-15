@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Edge-to-edge (Android 15 / targetSdk 35): NIE ustawiamy android:statusBarColor
+         ani navigationBarColor — są wycofane i ignorowane na API 35, a ich obecność
+         wywołuje ostrzeżenie Play „Edge-to-edge may not display for all users".
+         Wygląd pasków systemowych zapewnia enableEdgeToEdge() w MainActivity,
+         a wcięcia obsługuje Scaffold (padding). -->
     <style name="Theme.HormonWzrostu" parent="@android:style/Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">@color/ic_launcher_background</item>
         <item name="android:windowBackground">@android:color/white</item>
     </style>
 </resources>
