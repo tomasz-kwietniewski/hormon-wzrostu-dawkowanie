@@ -13,8 +13,8 @@ android {
         applicationId = "pl.hormonwzrostu"
         minSdk = 26
         targetSdk = 35
-        versionCode = 16
-        versionName = "1.15"
+        versionCode = 18
+        versionName = "1.17"
     }
 
     // Stały klucz podpisujący dostarczany przez CI (zmienne środowiskowe z secretów).
@@ -76,4 +76,5 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.kotlinx.serialization.json)
     debugImplementation(libs.androidx.ui.tooling)
+    testImplementation(libs.junit)
 }

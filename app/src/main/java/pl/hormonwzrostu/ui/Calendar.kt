@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -207,21 +209,27 @@ private fun LegendItem(color: Color, label: String) {
 }
 
 /**
- * Okno edycji jednego dnia: data, dawka, status, pole komentarza oraz akcje
- * Podano (zielony) / Pominięto (czerwony) / Zapisz (sam komentarz). „X" w rogu zamyka bez zmian.
+ * Okno edycji jednego dnia: data, dzień cyklu/dawka, pole faktycznie podanej dawki, komentarz
+ * oraz akcje Podano (zielony) / Pominięto (czerwony) / Zapisz (sam komentarz).
+ * Pole dawki widoczne, gdy dzień można podać (dziś, wstecz). „X" zamyka bez zmian.
  */
 @Composable
 fun DayEditDialog(
     date: LocalDate,
     schedule: Schedule,
     status: DayStatus,
+    dayInCycle: Int?,
+    plannedMg: Double,
+    actualMg: Double?,
     initialComment: String,
-    onConfirm: (given: Boolean, comment: String) -> Unit,
+    onConfirm: (given: Boolean, comment: String, doseMg: Double?) -> Unit,
     onSaveComment: (comment: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var comment by remember(date) { mutableStateOf(initialComment) }
-    val idx = schedule.dayIndexInCycle(date)
+    var doseText by remember(date) { mutableStateOf(formatMg(actualMg ?: plannedMg)) }
+    // Pole dawki ma sens dla dni, które realnie można podać (nie dla przyszłych).
+    val canDose = status != DayStatus.UPCOMING && status != DayStatus.NONE
 
     Dialog(onDismissRequest = onDismiss) {
         Card(shape = RoundedCornerShape(20.dp)) {
@@ -235,17 +243,29 @@ fun DayEditDialog(
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.padding(end = 36.dp),
                     )
-                    if (idx != null) {
+                    if (dayInCycle != null) {
                         Text(
                             stringResource(
                                 R.string.edit_day_info,
-                                idx + 1,
+                                dayInCycle,
                                 schedule.daysPerCycle,
-                                formatMg(schedule.doseForDay(idx)),
+                                formatMg(actualMg ?: plannedMg),
                             ),
                         )
                     }
                     Text(stringResource(R.string.edit_current, statusWord(status)))
+
+                    if (canDose) {
+                        OutlinedTextField(
+                            value = doseText,
+                            onValueChange = { doseText = it },
+                            label = { Text(stringResource(R.string.field_actual_dose)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+
                     OutlinedTextField(
                         value = comment,
                         onValueChange = { comment = it },
@@ -258,12 +278,12 @@ fun DayEditDialog(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         Button(
-                            onClick = { onConfirm(true, comment) },
+                            onClick = { onConfirm(true, comment, parseDose(doseText, plannedMg)) },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = GivenColor, contentColor = Color.White),
                         ) { Text(stringResource(R.string.legend_given)) }
                         Button(
-                            onClick = { onConfirm(false, comment) },
+                            onClick = { onConfirm(false, comment, null) },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = MissedColor, contentColor = Color.White),
                         ) { Text(stringResource(R.string.legend_missed)) }
@@ -287,4 +307,16 @@ fun DayEditDialog(
             }
         }
     }
+}
+
+/**
+ * Parsuje wpisaną dawkę (akceptuje przecinek i kropkę). Zwraca null, gdy puste, niepoprawne,
+ * ≤ 0 lub równe dawce planowanej — null oznacza „bez override, trzymaj się rozpiski".
+ */
+private fun parseDose(text: String, plannedMg: Double): Double? {
+    val value = text.trim().replace(',', '.').toDoubleOrNull() ?: return null
+    if (value <= 0.0) return null
+    val rounded = Math.round(value * 1000.0) / 1000.0
+    val plannedRounded = Math.round(plannedMg * 1000.0) / 1000.0
+    return if (rounded == plannedRounded) null else rounded
 }

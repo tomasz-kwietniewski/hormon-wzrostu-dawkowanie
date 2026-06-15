@@ -97,7 +97,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
-                    TextButton(onClick = onCancel) { Text(stringResource(R.string.btn_cancel)) }
+                    TextButton(onClick = onCancel) { Text(stringResource(R.string.btn_back)) }
                 },
             )
         },

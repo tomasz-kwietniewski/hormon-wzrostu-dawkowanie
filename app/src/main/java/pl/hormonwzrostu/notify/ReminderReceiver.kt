@@ -16,22 +16,19 @@ class ReminderReceiver : BroadcastReceiver() {
 
         if (schedule.enabled && schedule.isValid()) {
             val today = LocalDate.now()
-            val dayIndex = schedule.dayIndexInCycle(today)
-            if (dayIndex != null) {
-                val dose = schedule.doseForDay(dayIndex)
-                val dayNumber = dayIndex + 1
-                val isLast = schedule.isLastDayOfCycle(dayIndex)
-
+            val repo = ScheduleRepository(context)
+            val next = pl.hormonwzrostu.data.nextDose(schedule, repo.loadIntake(), repo.loadDoses(), today)
+            if (next != null) {
                 val title = context.getString(
                     R.string.notif_title,
                     schedule.childName,
-                    formatMg(dose),
+                    formatMg(next.plannedMg),
                 )
                 val medLine = schedule.medName +
-                    if (isLast) context.getString(R.string.notif_last_suffix) else ""
+                    if (next.isLastInCycle) context.getString(R.string.notif_last_suffix) else ""
                 val text = context.getString(
                     R.string.notif_text,
-                    dayNumber,
+                    next.dayInCycle,
                     schedule.daysPerCycle,
                     medLine,
                 )

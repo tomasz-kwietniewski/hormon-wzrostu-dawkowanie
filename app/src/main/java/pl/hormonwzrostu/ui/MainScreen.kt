@@ -42,8 +42,10 @@ import pl.hormonwzrostu.R
 import pl.hormonwzrostu.data.CsvLabels
 import pl.hormonwzrostu.data.Schedule
 import pl.hormonwzrostu.data.buildIntakeRows
+import pl.hormonwzrostu.data.buildTimeline
 import pl.hormonwzrostu.data.dayStatus
 import pl.hormonwzrostu.data.formatMg
+import pl.hormonwzrostu.data.nextDose
 import pl.hormonwzrostu.notify.isIgnoringBatteryOptimizations
 import pl.hormonwzrostu.notify.requestIgnoreBatteryOptimizations
 import pl.hormonwzrostu.util.buildIntakeXlsx
@@ -58,8 +60,10 @@ fun MainScreen(
     schedule: Schedule,
     intake: Set<String>,
     comments: Map<String, String>,
+    doses: Map<String, Double>,
     onSetGiven: (LocalDate, Boolean) -> Unit,
     onSetComment: (LocalDate, String) -> Unit,
+    onSetActualDose: (LocalDate, Double?) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val today = LocalDate.now()
@@ -109,12 +113,16 @@ fun MainScreen(
                 TodayDoseCard(
                     schedule = schedule,
                     intake = intake,
+                    doses = doses,
                     today = today,
                     onMark = { selected = today },
-                    onUndo = { onSetGiven(today, false) },
+                    onUndo = {
+                        onSetActualDose(today, null)
+                        onSetGiven(today, false)
+                    },
                 )
                 CalendarCard(schedule, intake, today, onPickDay = { selected = it })
-                ExportButton(schedule, intake, comments, today)
+                ExportButton(schedule, intake, doses, comments, today)
                 ScheduleSummaryCard(schedule)
                 Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.btn_settings))
@@ -133,13 +141,23 @@ fun MainScreen(
 
     selected?.let { date ->
         val status = dayStatus(schedule, date, today, intake)
+        val timeline = buildTimeline(schedule, intake, doses)
+        val event = timeline.firstOrNull { it.date == date }
+        // Planowana dawka dla tego dnia: z przebiegu (gdy podano) lub projekcja na ten dzień.
+        val plannedMg = event?.plannedMg
+            ?: nextDose(schedule, intake, doses, date)?.plannedMg
+            ?: schedule.dailyDoseMg
         DayEditDialog(
             date = date,
             schedule = schedule,
             status = status,
+            dayInCycle = event?.dayInCycle,
+            plannedMg = plannedMg,
+            actualMg = doses[date.toString()],
             initialComment = comments[date.toString()] ?: "",
-            onConfirm = { given, comment ->
+            onConfirm = { given, comment, doseMg ->
                 onSetComment(date, comment)
+                onSetActualDose(date, if (given) doseMg else null)
                 onSetGiven(date, given)
                 selected = null
             },
@@ -184,11 +202,19 @@ private fun NotConfiguredCard() {
 private fun TodayDoseCard(
     schedule: Schedule,
     intake: Set<String>,
+    doses: Map<String, Double>,
     today: LocalDate,
     onMark: () -> Unit,
     onUndo: () -> Unit,
 ) {
-    val dayIndex = schedule.dayIndexInCycle(today)
+    val given = intake.contains(today.toString())
+    // Gdy dziś już podano — stan z faktycznego przebiegu (uwzględnia korektę dawki);
+    // gdy jeszcze nie podano — projekcja następnej dawki.
+    val event = if (given) buildTimeline(schedule, intake, doses).firstOrNull { it.date == today } else null
+    val next = if (event == null) nextDose(schedule, intake, doses, today) else null
+    val dayInCycle = event?.dayInCycle ?: next?.dayInCycle
+    val shownDose = event?.actualMg ?: next?.plannedMg
+    val isLast = event?.isLastInCycle ?: next?.isLastInCycle ?: false
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -201,22 +227,24 @@ private fun TodayDoseCard(
         ) {
             Text(stringResource(R.string.today_dose_title), style = MaterialTheme.typography.titleMedium)
 
-            if (dayIndex == null) {
+            if (dayInCycle == null || shownDose == null) {
                 Text(stringResource(R.string.cycle_not_started), style = MaterialTheme.typography.bodyMedium)
             } else {
-                val dose = schedule.doseForDay(dayIndex)
-                val given = intake.contains(today.toString())
-
                 Text(
-                    stringResource(R.string.mg_value, formatMg(dose)),
+                    stringResource(R.string.mg_value, formatMg(shownDose)),
                     style = MaterialTheme.typography.displayMedium,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    stringResource(R.string.day_of_cycle, schedule.childName, dayIndex + 1, schedule.daysPerCycle),
+                    stringResource(
+                        R.string.day_of_cycle_est,
+                        schedule.childName,
+                        dayInCycle,
+                        schedule.daysPerCycle,
+                    ),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                if (schedule.isLastDayOfCycle(dayIndex)) {
+                if (isLast) {
                     Text(
                         stringResource(R.string.last_dose_warning),
                         style = MaterialTheme.typography.bodyMedium,
@@ -249,6 +277,7 @@ private fun TodayDoseCard(
 private fun ExportButton(
     schedule: Schedule,
     intake: Set<String>,
+    doses: Map<String, Double>,
     comments: Map<String, String>,
     today: LocalDate,
 ) {
@@ -267,7 +296,7 @@ private fun ExportButton(
     )
     Button(
         onClick = {
-            val rows = buildIntakeRows(schedule, intake, comments, today, labels)
+            val rows = buildIntakeRows(schedule, intake, doses, comments, today, labels)
             val xlsx = buildIntakeXlsx(sheetName, labels, rows)
             val safeChild = schedule.childName.trim().ifBlank { "intake" }
                 .replace(Regex("[^A-Za-z0-9]+"), "_")
