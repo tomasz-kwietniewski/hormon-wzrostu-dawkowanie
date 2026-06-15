@@ -25,6 +25,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var comments by mutableStateOf(repository.loadComments())
         private set
 
+    /** Mapa data (ISO) -> faktycznie podana dawka (mg). */
+    var doses by mutableStateOf(repository.loadDoses())
+        private set
+
     /** Zapisuje schemat i przeplanowuje codzienne przypomnienie. */
     fun update(newSchedule: Schedule) {
         schedule = newSchedule
@@ -53,10 +57,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun commentFor(date: LocalDate): String = comments[date.toString()] ?: ""
 
+    /** Zapisuje faktycznie podaną dawkę dnia; null/≤0 = usuwa override (dawka wg planu). */
+    fun setActualDose(date: LocalDate, mg: Double?) {
+        val iso = date.toString()
+        val updated = if (mg == null || mg <= 0.0) doses - iso else doses + (iso to mg)
+        doses = updated
+        repository.saveDoses(updated)
+    }
+
+    fun actualDoseFor(date: LocalDate): Double? = doses[date.toString()]
+
     /** Ponowne wczytanie stanu z repozytorium (np. po imporcie kopii). */
     fun reload() {
         schedule = repository.load()
         intake = repository.loadIntake()
         comments = repository.loadComments()
+        doses = repository.loadDoses()
     }
 }

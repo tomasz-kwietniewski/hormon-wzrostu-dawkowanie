@@ -40,6 +40,16 @@ class ScheduleRepository(context: Context) {
         prefs.edit().putString(KEY_COMMENTS, json.encodeToString(comments)).apply()
     }
 
+    /** Mapa data (ISO) -> faktycznie podana dawka (mg). Brak wpisu = dawka wg planu. */
+    fun loadDoses(): Map<String, Double> {
+        val raw = prefs.getString(KEY_DOSES, null) ?: return emptyMap()
+        return runCatching { json.decodeFromString<Map<String, Double>>(raw) }.getOrDefault(emptyMap())
+    }
+
+    fun saveDoses(doses: Map<String, Double>) {
+        prefs.edit().putString(KEY_DOSES, json.encodeToString(doses)).apply()
+    }
+
     /** Wybrany język UI: "" = systemowy, "pl", "en". */
     fun loadLang(): String = prefs.getString(KEY_LANG, "") ?: ""
 
@@ -49,7 +59,7 @@ class ScheduleRepository(context: Context) {
 
     /** Pełna kopia wszystkich danych jako JSON. */
     fun exportBackup(): String =
-        json.encodeToString(Backup(1, load(), loadIntake(), loadComments(), loadLang()))
+        json.encodeToString(Backup(2, load(), loadIntake(), loadComments(), loadLang(), loadDoses()))
 
     /** Wczytuje kopię z JSON; zwraca true przy powodzeniu. */
     fun importBackup(text: String): Boolean = runCatching {
@@ -58,6 +68,7 @@ class ScheduleRepository(context: Context) {
         saveIntake(backup.intake)
         saveComments(backup.comments)
         saveLang(backup.lang)
+        saveDoses(backup.doses)
     }.isSuccess
 
     companion object {
@@ -66,6 +77,7 @@ class ScheduleRepository(context: Context) {
         private const val KEY_INTAKE = "intake_dates"
         private const val KEY_COMMENTS = "intake_comments"
         private const val KEY_LANG = "ui_lang"
+        private const val KEY_DOSES = "intake_doses"
         private val json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
