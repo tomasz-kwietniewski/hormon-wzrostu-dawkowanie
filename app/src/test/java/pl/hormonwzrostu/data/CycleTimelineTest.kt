@@ -93,6 +93,15 @@ class CycleTimelineTest {
     }
 
     @Test
+    fun nextDose_lastSlot_isLastInCycleTrue() {
+        // 10 mg / 0,8 → 11 dni po 0,8; dzień 12 = reszta 1,2 (ostatni w ampułce).
+        val nd = nextDose(sched(10.0, 0.8), dates("2026-01-01", 11), emptyMap(), LocalDate.parse("2026-01-12"))!!
+        assertEquals(12, nd.dayInCycle)
+        assertEquals(1.2, nd.plannedMg, 1e-9)
+        assertTrue(nd.isLastInCycle)
+    }
+
+    @Test
     fun nextDose_beforeStart_isNull() {
         assertNull(nextDose(sched(start = "2026-01-10"), emptySet(), emptyMap(), LocalDate.parse("2026-01-05")))
     }
