@@ -4,7 +4,6 @@ import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 
 /**
  * Schemat dawkowania jednego leku.
@@ -46,30 +45,6 @@ data class Schedule(
         startDateIso.takeIf { it.isNotBlank() }?.let {
             runCatching { LocalDate.parse(it) }.getOrNull()
         }
-
-    /**
-     * Indeks dnia w cyklu (0-based) dla podanej daty.
-     * Zwraca null, gdy brak daty startu lub data jest przed startem.
-     */
-    fun dayIndexInCycle(date: LocalDate): Int? {
-        val start = startDate() ?: return null
-        val diff = ChronoUnit.DAYS.between(start, date)
-        if (diff < 0 || daysPerCycle < 1) return null
-        return (diff % daysPerCycle).toInt()
-    }
-
-    /** Numer cyklu (=numer ampułki) liczony od 1 dla podanej daty. */
-    fun cycleNumber(date: LocalDate): Int? {
-        val start = startDate() ?: return null
-        val diff = ChronoUnit.DAYS.between(start, date)
-        if (diff < 0 || daysPerCycle < 1) return null
-        return (diff / daysPerCycle).toInt() + 1
-    }
-
-    fun doseForDay(dayIndexInCycle: Int): Double =
-        if (dayIndexInCycle >= regularDays) lastDayDoseMg else dailyDoseMg
-
-    fun isLastDayOfCycle(dayIndexInCycle: Int): Boolean = dayIndexInCycle >= regularDays
 
     /** Czy schemat jest na tyle kompletny, by planować powiadomienia. */
     fun isValid(): Boolean =
