@@ -57,8 +57,10 @@ class MainActivity : ComponentActivity() {
                         schedule = vm.schedule,
                         intake = vm.intake,
                         comments = vm.comments,
+                        doses = vm.doses,
                         onSetGiven = { date, given -> vm.setGiven(date, given) },
                         onSetComment = { date, text -> vm.setComment(date, text) },
+                        onSetActualDose = { date, mg -> vm.setActualDose(date, mg) },
                         onOpenSettings = { screen = Screen.SETTINGS },
                     )
 

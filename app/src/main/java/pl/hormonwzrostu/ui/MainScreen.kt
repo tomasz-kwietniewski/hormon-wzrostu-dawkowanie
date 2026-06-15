@@ -44,6 +44,7 @@ import pl.hormonwzrostu.data.Schedule
 import pl.hormonwzrostu.data.buildIntakeRows
 import pl.hormonwzrostu.data.dayStatus
 import pl.hormonwzrostu.data.formatMg
+import pl.hormonwzrostu.data.nextDose
 import pl.hormonwzrostu.notify.isIgnoringBatteryOptimizations
 import pl.hormonwzrostu.notify.requestIgnoreBatteryOptimizations
 import pl.hormonwzrostu.util.buildIntakeXlsx
@@ -58,8 +59,10 @@ fun MainScreen(
     schedule: Schedule,
     intake: Set<String>,
     comments: Map<String, String>,
+    doses: Map<String, Double>,
     onSetGiven: (LocalDate, Boolean) -> Unit,
     onSetComment: (LocalDate, String) -> Unit,
+    onSetActualDose: (LocalDate, Double?) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val today = LocalDate.now()
@@ -109,6 +112,7 @@ fun MainScreen(
                 TodayDoseCard(
                     schedule = schedule,
                     intake = intake,
+                    doses = doses,
                     today = today,
                     onMark = { selected = today },
                     onUndo = { onSetGiven(today, false) },
@@ -184,11 +188,13 @@ private fun NotConfiguredCard() {
 private fun TodayDoseCard(
     schedule: Schedule,
     intake: Set<String>,
+    doses: Map<String, Double>,
     today: LocalDate,
     onMark: () -> Unit,
     onUndo: () -> Unit,
 ) {
-    val dayIndex = schedule.dayIndexInCycle(today)
+    val next = nextDose(schedule, intake, doses, today)
+    val given = intake.contains(today.toString())
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -201,22 +207,27 @@ private fun TodayDoseCard(
         ) {
             Text(stringResource(R.string.today_dose_title), style = MaterialTheme.typography.titleMedium)
 
-            if (dayIndex == null) {
+            if (next == null) {
                 Text(stringResource(R.string.cycle_not_started), style = MaterialTheme.typography.bodyMedium)
             } else {
-                val dose = schedule.doseForDay(dayIndex)
-                val given = intake.contains(today.toString())
+                // Jeśli dziś już podano, pokaż faktyczną dawkę; w przeciwnym razie planowaną.
+                val shownDose = if (given) (doses[today.toString()] ?: next.plannedMg) else next.plannedMg
 
                 Text(
-                    stringResource(R.string.mg_value, formatMg(dose)),
+                    stringResource(R.string.mg_value, formatMg(shownDose)),
                     style = MaterialTheme.typography.displayMedium,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    stringResource(R.string.day_of_cycle, schedule.childName, dayIndex + 1, schedule.daysPerCycle),
+                    stringResource(
+                        R.string.day_of_cycle_est,
+                        schedule.childName,
+                        next.dayInCycle,
+                        schedule.daysPerCycle,
+                    ),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                if (schedule.isLastDayOfCycle(dayIndex)) {
+                if (next.isLastInCycle) {
                     Text(
                         stringResource(R.string.last_dose_warning),
                         style = MaterialTheme.typography.bodyMedium,
