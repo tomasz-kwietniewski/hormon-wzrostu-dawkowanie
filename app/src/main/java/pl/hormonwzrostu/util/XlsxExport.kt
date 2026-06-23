@@ -16,8 +16,8 @@ import java.util.zip.ZipOutputStream
  * aby uniknąć „podstawiania" fontu pod ł, ę, ó itp.
  */
 fun buildIntakeXlsx(sheetName: String, labels: CsvLabels, rows: List<IntakeRow>): ByteArray {
-    val headers = listOf(labels.date, labels.day, labels.dose, labels.status, labels.comment)
-    val cols = "ABCDE"
+    val headers = listOf(labels.date, labels.day, labels.dose, labels.site, labels.status, labels.comment)
+    val cols = "ABCDEF"
 
     val sheet = StringBuilder()
     sheet.append("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>""")
@@ -35,8 +35,9 @@ fun buildIntakeXlsx(sheetName: String, labels: CsvLabels, rows: List<IntakeRow>)
         sheet.append(strCell("A$rn", row.date, 0))
         sheet.append(if (row.day != null) numCell("B$rn", row.day.toString()) else strCell("B$rn", "", 0))
         sheet.append(if (row.doseMg != null) numCell("C$rn", doseXml(row.doseMg)) else strCell("C$rn", "", 0))
-        sheet.append(strCell("D$rn", row.status, 0))
-        sheet.append(strCell("E$rn", row.comment, 0))
+        sheet.append(strCell("D$rn", row.site, 0))
+        sheet.append(strCell("E$rn", row.status, 0))
+        sheet.append(strCell("F$rn", row.comment, 0))
         sheet.append("</row>")
     }
     sheet.append("</sheetData></worksheet>")

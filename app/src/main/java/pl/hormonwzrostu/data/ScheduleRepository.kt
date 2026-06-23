@@ -50,6 +50,36 @@ class ScheduleRepository(context: Context) {
         prefs.edit().putString(KEY_DOSES, json.encodeToString(doses)).apply()
     }
 
+    /** Zbiór dat (ISO) jawnie oznaczonych jako „pominięto". */
+    fun loadSkipped(): Set<String> {
+        val raw = prefs.getString(KEY_SKIPPED, null) ?: return emptySet()
+        return runCatching { json.decodeFromString<Set<String>>(raw) }.getOrDefault(emptySet())
+    }
+
+    fun saveSkipped(dates: Set<String>) {
+        prefs.edit().putString(KEY_SKIPPED, json.encodeToString(dates)).apply()
+    }
+
+    /** Zbiór dat (ISO) otwarcia nowej ampułki — ręczne re-kotwice cyklu. */
+    fun loadAmpouleStarts(): Set<String> {
+        val raw = prefs.getString(KEY_AMPOULE_STARTS, null) ?: return emptySet()
+        return runCatching { json.decodeFromString<Set<String>>(raw) }.getOrDefault(emptySet())
+    }
+
+    fun saveAmpouleStarts(dates: Set<String>) {
+        prefs.edit().putString(KEY_AMPOULE_STARTS, json.encodeToString(dates)).apply()
+    }
+
+    /** Mapa data (ISO) -> token miejsca wkłucia (np. „L-udo"). */
+    fun loadSites(): Map<String, String> {
+        val raw = prefs.getString(KEY_SITES, null) ?: return emptyMap()
+        return runCatching { json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
+    }
+
+    fun saveSites(sites: Map<String, String>) {
+        prefs.edit().putString(KEY_SITES, json.encodeToString(sites)).apply()
+    }
+
     /** Wybrany język UI: "" = systemowy, "pl", "en". */
     fun loadLang(): String = prefs.getString(KEY_LANG, "") ?: ""
 
@@ -59,7 +89,19 @@ class ScheduleRepository(context: Context) {
 
     /** Pełna kopia wszystkich danych jako JSON. */
     fun exportBackup(): String =
-        json.encodeToString(Backup(2, load(), loadIntake(), loadComments(), loadLang(), loadDoses()))
+        json.encodeToString(
+            Backup(
+                version = 4,
+                schedule = load(),
+                intake = loadIntake(),
+                comments = loadComments(),
+                lang = loadLang(),
+                doses = loadDoses(),
+                skipped = loadSkipped(),
+                ampouleStarts = loadAmpouleStarts(),
+                sites = loadSites(),
+            ),
+        )
 
     /** Wczytuje kopię z JSON; zwraca true przy powodzeniu. */
     fun importBackup(text: String): Boolean = runCatching {
@@ -69,6 +111,9 @@ class ScheduleRepository(context: Context) {
         saveComments(backup.comments)
         saveLang(backup.lang)
         saveDoses(backup.doses)
+        saveSkipped(backup.skipped)
+        saveAmpouleStarts(backup.ampouleStarts)
+        saveSites(backup.sites)
     }.isSuccess
 
     companion object {
@@ -78,6 +123,9 @@ class ScheduleRepository(context: Context) {
         private const val KEY_COMMENTS = "intake_comments"
         private const val KEY_LANG = "ui_lang"
         private const val KEY_DOSES = "intake_doses"
+        private const val KEY_SKIPPED = "intake_skipped"
+        private const val KEY_AMPOULE_STARTS = "ampoule_starts"
+        private const val KEY_SITES = "intake_sites"
         private val json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
