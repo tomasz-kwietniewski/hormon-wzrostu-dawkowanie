@@ -39,6 +39,7 @@ data class CsvLabels(
     val given: String,
     val missed: String,
     val pending: String,
+    val site: String = "",
 )
 
 /** Pojedynczy wiersz zestawienia do eksportu (xlsx). day/doseMg = null dla dni bez podania. */
@@ -48,6 +49,7 @@ data class IntakeRow(
     val doseMg: Double?,
     val status: String,
     val comment: String,
+    val site: String = "",
 )
 
 /**
@@ -64,6 +66,8 @@ fun buildIntakeRows(
     labels: CsvLabels,
     ampouleStarts: Set<String> = emptySet(),
     skipped: Set<String> = emptySet(),
+    sites: Map<String, String> = emptyMap(),
+    siteLabels: Map<String, String> = emptyMap(),
 ): List<IntakeRow> {
     val rows = mutableListOf<IntakeRow>()
     val start = schedule.startDate() ?: return rows
@@ -72,13 +76,14 @@ fun buildIntakeRows(
     while (!date.isAfter(today)) {
         val iso = date.toString()
         val comment = comments[iso] ?: ""
+        val site = sites[iso]?.let { siteLabels[it] ?: it } ?: ""
         when (dayStatus(schedule, date, today, intake, skipped)) {
             DayStatus.GIVEN -> {
                 val ev = byDate[date]
-                rows.add(IntakeRow(iso, ev?.dayInCycle, ev?.actualMg, labels.given, comment))
+                rows.add(IntakeRow(iso, ev?.dayInCycle, ev?.actualMg, labels.given, comment, site))
             }
-            DayStatus.TODAY_PENDING -> rows.add(IntakeRow(iso, null, null, labels.pending, comment))
-            else -> rows.add(IntakeRow(iso, null, null, labels.missed, comment))
+            DayStatus.TODAY_PENDING -> rows.add(IntakeRow(iso, null, null, labels.pending, comment, site))
+            else -> rows.add(IntakeRow(iso, null, null, labels.missed, comment, site))
         }
         date = date.plusDays(1)
     }

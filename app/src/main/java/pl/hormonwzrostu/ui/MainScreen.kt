@@ -43,6 +43,7 @@ import pl.hormonwzrostu.data.CsvLabels
 import pl.hormonwzrostu.data.Schedule
 import pl.hormonwzrostu.data.buildIntakeRows
 import pl.hormonwzrostu.data.buildTimeline
+import pl.hormonwzrostu.data.InjectionSites
 import pl.hormonwzrostu.data.dayStatus
 import pl.hormonwzrostu.data.formatMg
 import pl.hormonwzrostu.data.nextDose
@@ -63,11 +64,13 @@ fun MainScreen(
     doses: Map<String, Double>,
     skipped: Set<String>,
     ampouleStarts: Set<String>,
+    sites: Map<String, String>,
     onSetGiven: (LocalDate, Boolean) -> Unit,
     onSetSkipped: (LocalDate, Boolean) -> Unit,
     onSetComment: (LocalDate, String) -> Unit,
     onSetActualDose: (LocalDate, Double?) -> Unit,
     onSetAmpouleStart: (LocalDate, Boolean) -> Unit,
+    onSetSite: (LocalDate, String?) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val today = LocalDate.now()
@@ -120,6 +123,7 @@ fun MainScreen(
                     doses = doses,
                     skipped = skipped,
                     ampouleStarts = ampouleStarts,
+                    sites = sites,
                     today = today,
                     onMark = { selected = today },
                     onUndo = {
@@ -129,7 +133,7 @@ fun MainScreen(
                     },
                 )
                 CalendarCard(schedule, intake, skipped, ampouleStarts, today, onPickDay = { selected = it })
-                ExportButton(schedule, intake, doses, comments, skipped, ampouleStarts, today)
+                ExportButton(schedule, intake, doses, comments, skipped, ampouleStarts, sites, today)
                 ScheduleSummaryCard(schedule)
                 Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.btn_settings))
@@ -169,6 +173,9 @@ fun MainScreen(
             initialComment = comments[date.toString()] ?: "",
             isAmpouleStart = ampouleStarts.contains(date.toString()),
             canToggleAmpoule = !isStartDay,
+            selectedSite = sites[date.toString()],
+            suggestedSite = pl.hormonwzrostu.data.InjectionSites.suggestedFor(sites, date),
+            onSetSite = { token -> onSetSite(date, token) },
             canPrev = canPrev,
             canNext = canNext,
             onPrev = { if (canPrev) selected = date.minusDays(1) },
@@ -234,6 +241,7 @@ private fun TodayDoseCard(
     doses: Map<String, Double>,
     skipped: Set<String>,
     ampouleStarts: Set<String>,
+    sites: Map<String, String>,
     today: LocalDate,
     onMark: () -> Unit,
     onUndo: () -> Unit,
@@ -306,6 +314,12 @@ private fun TodayDoseCard(
                         Text(stringResource(R.string.btn_unmark_given))
                     }
                 } else {
+                    // Podpowiedź rotacji miejsc — następne po ostatnio użytym.
+                    Text(
+                        stringResource(R.string.today_next_site, siteLabel(InjectionSites.suggestedFor(sites, today))),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
                     Button(onClick = onMark, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.btn_mark_given))
                     }
@@ -323,11 +337,13 @@ private fun ExportButton(
     comments: Map<String, String>,
     skipped: Set<String>,
     ampouleStarts: Set<String>,
+    sites: Map<String, String>,
     today: LocalDate,
 ) {
     val context = LocalContext.current
     val exportTitle = stringResource(R.string.export_share_title)
     val sheetName = stringResource(R.string.xlsx_sheet)
+    val siteLabels = siteLabelsMap()
     val labels = CsvLabels(
         date = stringResource(R.string.csv_col_date),
         day = stringResource(R.string.csv_col_day),
@@ -337,10 +353,14 @@ private fun ExportButton(
         given = stringResource(R.string.status_given),
         missed = stringResource(R.string.status_missed),
         pending = stringResource(R.string.status_pending),
+        site = stringResource(R.string.csv_col_site),
     )
     Button(
         onClick = {
-            val rows = buildIntakeRows(schedule, intake, doses, comments, today, labels, ampouleStarts, skipped)
+            val rows = buildIntakeRows(
+                schedule, intake, doses, comments, today, labels,
+                ampouleStarts, skipped, sites, siteLabels,
+            )
             val xlsx = buildIntakeXlsx(sheetName, labels, rows)
             val safeChild = schedule.childName.trim().ifBlank { "intake" }
                 .replace(Regex("[^A-Za-z0-9]+"), "_")

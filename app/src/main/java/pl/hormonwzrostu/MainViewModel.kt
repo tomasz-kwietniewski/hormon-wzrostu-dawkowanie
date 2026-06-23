@@ -37,6 +37,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var ampouleStarts by mutableStateOf(repository.loadAmpouleStarts())
         private set
 
+    /** Mapa data (ISO) -> token miejsca wkłucia (np. „L-udo"). */
+    var sites by mutableStateOf(repository.loadSites())
+        private set
+
     /** Zapisuje schemat i przeplanowuje codzienne przypomnienie. */
     fun update(newSchedule: Schedule) {
         schedule = newSchedule
@@ -80,6 +84,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         repository.saveAmpouleStarts(a)
     }
 
+    /** Ustawia miejsce wkłucia dnia (null/pusty = usuwa). */
+    fun setSite(date: LocalDate, token: String?) {
+        val iso = date.toString()
+        val updated = if (token.isNullOrBlank()) sites - iso else sites + (iso to token)
+        sites = updated
+        repository.saveSites(updated)
+    }
+
     /** Zapisuje komentarz do dnia (pusty = usuwa). */
     fun setComment(date: LocalDate, text: String) {
         val iso = date.toString()
@@ -109,5 +121,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         doses = repository.loadDoses()
         skipped = repository.loadSkipped()
         ampouleStarts = repository.loadAmpouleStarts()
+        sites = repository.loadSites()
     }
 }

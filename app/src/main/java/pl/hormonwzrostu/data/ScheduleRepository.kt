@@ -70,6 +70,16 @@ class ScheduleRepository(context: Context) {
         prefs.edit().putString(KEY_AMPOULE_STARTS, json.encodeToString(dates)).apply()
     }
 
+    /** Mapa data (ISO) -> token miejsca wkłucia (np. „L-udo"). */
+    fun loadSites(): Map<String, String> {
+        val raw = prefs.getString(KEY_SITES, null) ?: return emptyMap()
+        return runCatching { json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
+    }
+
+    fun saveSites(sites: Map<String, String>) {
+        prefs.edit().putString(KEY_SITES, json.encodeToString(sites)).apply()
+    }
+
     /** Wybrany język UI: "" = systemowy, "pl", "en". */
     fun loadLang(): String = prefs.getString(KEY_LANG, "") ?: ""
 
@@ -81,7 +91,7 @@ class ScheduleRepository(context: Context) {
     fun exportBackup(): String =
         json.encodeToString(
             Backup(
-                version = 3,
+                version = 4,
                 schedule = load(),
                 intake = loadIntake(),
                 comments = loadComments(),
@@ -89,6 +99,7 @@ class ScheduleRepository(context: Context) {
                 doses = loadDoses(),
                 skipped = loadSkipped(),
                 ampouleStarts = loadAmpouleStarts(),
+                sites = loadSites(),
             ),
         )
 
@@ -102,6 +113,7 @@ class ScheduleRepository(context: Context) {
         saveDoses(backup.doses)
         saveSkipped(backup.skipped)
         saveAmpouleStarts(backup.ampouleStarts)
+        saveSites(backup.sites)
     }.isSuccess
 
     companion object {
@@ -113,6 +125,7 @@ class ScheduleRepository(context: Context) {
         private const val KEY_DOSES = "intake_doses"
         private const val KEY_SKIPPED = "intake_skipped"
         private const val KEY_AMPOULE_STARTS = "ampoule_starts"
+        private const val KEY_SITES = "intake_sites"
         private val json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true

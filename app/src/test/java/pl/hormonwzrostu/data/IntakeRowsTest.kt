@@ -43,6 +43,17 @@ class IntakeRowsTest {
     }
 
     @Test
+    fun site_isResolvedToLabelInRows() {
+        val intake = setOf("2026-01-01")
+        val rows = buildIntakeRows(
+            sched(), intake, emptyMap(), emptyMap(), LocalDate.parse("2026-01-01"), labels,
+            sites = mapOf("2026-01-01" to "L-udo"),
+            siteLabels = mapOf("L-udo" to "lewe udo"),
+        )
+        assertEquals("lewe udo", rows[0].site)
+    }
+
+    @Test
     fun ampouleAnchor_flowsIntoExportRows() {
         // 4 dni podane, 4. dzień = nowa ampułka -> w wierszu dzień cyklu = 1.
         val intake = setOf("2026-01-01", "2026-01-02", "2026-01-03", "2026-01-04")

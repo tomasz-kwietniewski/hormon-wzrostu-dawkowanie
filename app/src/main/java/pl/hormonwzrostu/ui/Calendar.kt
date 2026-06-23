@@ -7,22 +7,28 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import pl.hormonwzrostu.R
 import pl.hormonwzrostu.data.DayStatus
+import pl.hormonwzrostu.data.InjectionSites
 import pl.hormonwzrostu.data.Schedule
 import pl.hormonwzrostu.data.dayStatus
 import pl.hormonwzrostu.data.formatMg
@@ -233,6 +240,7 @@ private fun LegendItem(color: Color, label: String) {
  * oraz akcje Podano (zielony) / Pominięto (czerwony) / Zapisz (sam komentarz).
  * Pole dawki widoczne, gdy dzień można podać (dziś, wstecz). „X" zamyka bez zmian.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DayEditDialog(
     date: LocalDate,
@@ -244,6 +252,9 @@ fun DayEditDialog(
     initialComment: String,
     isAmpouleStart: Boolean,
     canToggleAmpoule: Boolean,
+    selectedSite: String?,
+    suggestedSite: String,
+    onSetSite: (String?) -> Unit,
     canPrev: Boolean,
     canNext: Boolean,
     onPrev: () -> Unit,
@@ -266,6 +277,7 @@ fun DayEditDialog(
             Column(
                 Modifier
                     .padding(20.dp)
+                    .verticalScroll(rememberScrollState())
                     // Swipe lewo/prawo = poprzedni/następny dzień (w zakresie start ... dziś).
                     .pointerInput(date, canPrev, canNext) {
                         var dragX = 0f
@@ -317,12 +329,31 @@ fun DayEditDialog(
                 Text(stringResource(R.string.edit_current, statusWord(status)))
 
                 if (canDose) {
+                    // Wyróżnione pole dawki: tekst pomocniczy z dawką planową, akcent przy korekcie,
+                    // by realne dawki trafiały tutaj (a nie do komentarza).
+                    val isCorrection = parseDose(doseText, plannedMg) != null
+                    val accent = if (isCorrection) AmpouleStartColor else MaterialTheme.colorScheme.primary
                     OutlinedTextField(
                         value = doseText,
                         onValueChange = { doseText = it },
                         label = { Text(stringResource(R.string.field_actual_dose)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        supportingText = {
+                            Text(
+                                if (isCorrection) {
+                                    stringResource(R.string.dose_correction_note, formatMg(plannedMg))
+                                } else {
+                                    stringResource(R.string.dose_helper, formatMg(plannedMg))
+                                },
+                            )
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accent,
+                            focusedLabelColor = accent,
+                            focusedSupportingTextColor = accent,
+                            unfocusedSupportingTextColor = if (isCorrection) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -334,6 +365,31 @@ fun DayEditDialog(
                     minLines = 2,
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                // Miejsce wkłucia — chipy z rotacją; gdy nic nie wybrano, pokazujemy podpowiedź.
+                if (canDose) {
+                    Text(
+                        stringResource(R.string.edit_site_label),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    if (selectedSite == null) {
+                        Text(
+                            stringResource(R.string.site_suggested, siteLabel(suggestedSite)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AmpouleStartColor,
+                        )
+                    }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        InjectionSites.ROTATION.forEach { token ->
+                            val isSel = token == selectedSite
+                            FilterChip(
+                                selected = isSel,
+                                onClick = { onSetSite(if (isSel) null else token) },
+                                label = { Text(siteLabel(token)) },
+                            )
+                        }
+                    }
+                }
 
                 // Re-kotwica ampułki — tylko dla dni, które można podać i nie będących dniem startu.
                 if (canToggleAmpoule && canDose) {
