@@ -61,9 +61,13 @@ fun MainScreen(
     intake: Set<String>,
     comments: Map<String, String>,
     doses: Map<String, Double>,
+    skipped: Set<String>,
+    ampouleStarts: Set<String>,
     onSetGiven: (LocalDate, Boolean) -> Unit,
+    onSetSkipped: (LocalDate, Boolean) -> Unit,
     onSetComment: (LocalDate, String) -> Unit,
     onSetActualDose: (LocalDate, Double?) -> Unit,
+    onSetAmpouleStart: (LocalDate, Boolean) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val today = LocalDate.now()
@@ -114,15 +118,18 @@ fun MainScreen(
                     schedule = schedule,
                     intake = intake,
                     doses = doses,
+                    skipped = skipped,
+                    ampouleStarts = ampouleStarts,
                     today = today,
                     onMark = { selected = today },
                     onUndo = {
                         onSetActualDose(today, null)
+                        onSetSkipped(today, false)
                         onSetGiven(today, false)
                     },
                 )
-                CalendarCard(schedule, intake, today, onPickDay = { selected = it })
-                ExportButton(schedule, intake, doses, comments, today)
+                CalendarCard(schedule, intake, skipped, ampouleStarts, today, onPickDay = { selected = it })
+                ExportButton(schedule, intake, doses, comments, skipped, ampouleStarts, today)
                 ScheduleSummaryCard(schedule)
                 Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.btn_settings))
@@ -140,13 +147,18 @@ fun MainScreen(
     }
 
     selected?.let { date ->
-        val status = dayStatus(schedule, date, today, intake)
-        val timeline = buildTimeline(schedule, intake, doses)
+        val status = dayStatus(schedule, date, today, intake, skipped)
+        val timeline = buildTimeline(schedule, intake, doses, ampouleStarts)
         val event = timeline.firstOrNull { it.date == date }
         // Planowana dawka dla tego dnia: z przebiegu (gdy podano) lub projekcja na ten dzień.
         val plannedMg = event?.plannedMg
-            ?: nextDose(schedule, intake, doses, date)?.plannedMg
+            ?: nextDose(schedule, intake, doses, date, ampouleStarts)?.plannedMg
             ?: schedule.dailyDoseMg
+        // Nawigacja w zakresie start ... dziś (przyszłych dni nie ma po co edytować).
+        val start = schedule.startDate()
+        val canPrev = start != null && date.isAfter(start)
+        val canNext = date.isBefore(today)
+        val isStartDay = start != null && date.isEqual(start)
         DayEditDialog(
             date = date,
             schedule = schedule,
@@ -155,10 +167,27 @@ fun MainScreen(
             plannedMg = plannedMg,
             actualMg = doses[date.toString()],
             initialComment = comments[date.toString()] ?: "",
+            isAmpouleStart = ampouleStarts.contains(date.toString()),
+            canToggleAmpoule = !isStartDay,
+            canPrev = canPrev,
+            canNext = canNext,
+            onPrev = { if (canPrev) selected = date.minusDays(1) },
+            onNext = { if (canNext) selected = date.plusDays(1) },
+            onToggleAmpouleStart = {
+                val enable = !ampouleStarts.contains(date.toString())
+                onSetAmpouleStart(date, enable)
+                // Re-kotwica ma sens na dniu podania — włączając ją, oznaczamy dzień jako podany.
+                if (enable) onSetGiven(date, true)
+            },
             onConfirm = { given, comment, doseMg ->
                 onSetComment(date, comment)
-                onSetActualDose(date, if (given) doseMg else null)
-                onSetGiven(date, given)
+                if (given) {
+                    onSetActualDose(date, doseMg)
+                    onSetGiven(date, true)
+                } else {
+                    onSetActualDose(date, null)
+                    onSetSkipped(date, true)
+                }
                 selected = null
             },
             onSaveComment = { comment ->
@@ -203,15 +232,18 @@ private fun TodayDoseCard(
     schedule: Schedule,
     intake: Set<String>,
     doses: Map<String, Double>,
+    skipped: Set<String>,
+    ampouleStarts: Set<String>,
     today: LocalDate,
     onMark: () -> Unit,
     onUndo: () -> Unit,
 ) {
     val given = intake.contains(today.toString())
+    val skippedToday = skipped.contains(today.toString())
     // Gdy dziś już podano — stan z faktycznego przebiegu (uwzględnia korektę dawki);
     // gdy jeszcze nie podano — projekcja następnej dawki.
-    val event = if (given) buildTimeline(schedule, intake, doses).firstOrNull { it.date == today } else null
-    val next = if (event == null) nextDose(schedule, intake, doses, today) else null
+    val event = if (given) buildTimeline(schedule, intake, doses, ampouleStarts).firstOrNull { it.date == today } else null
+    val next = if (event == null) nextDose(schedule, intake, doses, today, ampouleStarts) else null
     val dayInCycle = event?.dayInCycle ?: next?.dayInCycle
     val shownDose = event?.actualMg ?: next?.plannedMg
     val isLast = event?.isLastInCycle ?: next?.isLastInCycle ?: false
@@ -227,7 +259,17 @@ private fun TodayDoseCard(
         ) {
             Text(stringResource(R.string.today_dose_title), style = MaterialTheme.typography.titleMedium)
 
-            if (dayInCycle == null || shownDose == null) {
+            if (skippedToday) {
+                Text(
+                    stringResource(R.string.skipped_today_done),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+                TextButton(onClick = onUndo) {
+                    Text(stringResource(R.string.btn_unmark_given))
+                }
+            } else if (dayInCycle == null || shownDose == null) {
                 Text(stringResource(R.string.cycle_not_started), style = MaterialTheme.typography.bodyMedium)
             } else {
                 Text(
@@ -279,6 +321,8 @@ private fun ExportButton(
     intake: Set<String>,
     doses: Map<String, Double>,
     comments: Map<String, String>,
+    skipped: Set<String>,
+    ampouleStarts: Set<String>,
     today: LocalDate,
 ) {
     val context = LocalContext.current
@@ -296,7 +340,7 @@ private fun ExportButton(
     )
     Button(
         onClick = {
-            val rows = buildIntakeRows(schedule, intake, doses, comments, today, labels)
+            val rows = buildIntakeRows(schedule, intake, doses, comments, today, labels, ampouleStarts, skipped)
             val xlsx = buildIntakeXlsx(sheetName, labels, rows)
             val safeChild = schedule.childName.trim().ifBlank { "intake" }
                 .replace(Regex("[^A-Za-z0-9]+"), "_")

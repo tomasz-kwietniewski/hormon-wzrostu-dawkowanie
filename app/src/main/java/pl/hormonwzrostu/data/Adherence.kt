@@ -5,16 +5,23 @@ import java.time.LocalDate
 /** Status pojedynczego dnia względem schematu i zarejestrowanych podań. */
 enum class DayStatus { GIVEN, MISSED, TODAY_PENDING, UPCOMING, NONE }
 
-/** Wyznacza status dnia: brak/podano/pominięto/dziś/później. */
+/**
+ * Wyznacza status dnia: brak/podano/pominięto/dziś/później.
+ * Dzień jawnie zapisany w [skipped] jest „pominięty" także dla dnia dzisiejszego — dzięki temu
+ * po wyborze „Pominięto" kafelek dziś staje się czerwony zamiast zostawać żółtym (oczekuje).
+ */
 fun dayStatus(
     schedule: Schedule,
     date: LocalDate,
     today: LocalDate,
     intake: Set<String>,
+    skipped: Set<String> = emptySet(),
 ): DayStatus {
     val start = schedule.startDate() ?: return DayStatus.NONE
     if (date.isBefore(start)) return DayStatus.NONE
-    if (intake.contains(date.toString())) return DayStatus.GIVEN
+    val iso = date.toString()
+    if (intake.contains(iso)) return DayStatus.GIVEN
+    if (skipped.contains(iso)) return DayStatus.MISSED
     return when {
         date.isBefore(today) -> DayStatus.MISSED
         date.isEqual(today) -> DayStatus.TODAY_PENDING
@@ -55,15 +62,17 @@ fun buildIntakeRows(
     comments: Map<String, String>,
     today: LocalDate,
     labels: CsvLabels,
+    ampouleStarts: Set<String> = emptySet(),
+    skipped: Set<String> = emptySet(),
 ): List<IntakeRow> {
     val rows = mutableListOf<IntakeRow>()
     val start = schedule.startDate() ?: return rows
-    val byDate = buildTimeline(schedule, intake, doses).associateBy { it.date }
+    val byDate = buildTimeline(schedule, intake, doses, ampouleStarts).associateBy { it.date }
     var date = start
     while (!date.isAfter(today)) {
         val iso = date.toString()
         val comment = comments[iso] ?: ""
-        when (dayStatus(schedule, date, today, intake)) {
+        when (dayStatus(schedule, date, today, intake, skipped)) {
             DayStatus.GIVEN -> {
                 val ev = byDate[date]
                 rows.add(IntakeRow(iso, ev?.dayInCycle, ev?.actualMg, labels.given, comment))

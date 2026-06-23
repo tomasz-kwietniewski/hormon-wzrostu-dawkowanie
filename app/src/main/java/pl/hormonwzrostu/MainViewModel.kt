@@ -29,6 +29,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var doses by mutableStateOf(repository.loadDoses())
         private set
 
+    /** Zbiór dat (ISO) jawnie oznaczonych jako „pominięto". */
+    var skipped by mutableStateOf(repository.loadSkipped())
+        private set
+
+    /** Zbiór dat (ISO) otwarcia nowej ampułki — ręczne re-kotwice cyklu. */
+    var ampouleStarts by mutableStateOf(repository.loadAmpouleStarts())
+        private set
+
     /** Zapisuje schemat i przeplanowuje codzienne przypomnienie. */
     fun update(newSchedule: Schedule) {
         schedule = newSchedule
@@ -38,12 +46,38 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun isGiven(date: LocalDate): Boolean = intake.contains(date.toString())
 
-    /** Oznacza/odznacza podanie leku danego dnia. */
+    /** Oznacza/odznacza podanie leku danego dnia. Podanie wyklucza jawne pominięcie. */
     fun setGiven(date: LocalDate, given: Boolean) {
         val iso = date.toString()
         val updated = if (given) intake + iso else intake - iso
         intake = updated
         repository.saveIntake(updated)
+        if (given && skipped.contains(iso)) {
+            val s = skipped - iso
+            skipped = s
+            repository.saveSkipped(s)
+        }
+    }
+
+    /** Jawnie oznacza/odznacza pominięcie dnia. Pominięcie wyklucza podanie. */
+    fun setSkipped(date: LocalDate, skip: Boolean) {
+        val iso = date.toString()
+        val s = if (skip) skipped + iso else skipped - iso
+        skipped = s
+        repository.saveSkipped(s)
+        if (skip && intake.contains(iso)) {
+            val i = intake - iso
+            intake = i
+            repository.saveIntake(i)
+        }
+    }
+
+    /** Ustawia/zdejmuje ręczną re-kotwicę „nowa ampułka od tego dnia". */
+    fun setAmpouleStart(date: LocalDate, anchor: Boolean) {
+        val iso = date.toString()
+        val a = if (anchor) ampouleStarts + iso else ampouleStarts - iso
+        ampouleStarts = a
+        repository.saveAmpouleStarts(a)
     }
 
     /** Zapisuje komentarz do dnia (pusty = usuwa). */
@@ -73,5 +107,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         intake = repository.loadIntake()
         comments = repository.loadComments()
         doses = repository.loadDoses()
+        skipped = repository.loadSkipped()
+        ampouleStarts = repository.loadAmpouleStarts()
     }
 }

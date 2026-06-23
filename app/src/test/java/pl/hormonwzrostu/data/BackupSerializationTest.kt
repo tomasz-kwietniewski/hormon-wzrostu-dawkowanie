@@ -25,4 +25,24 @@ class BackupSerializationTest {
         val back = json.decodeFromString<Backup>(old)
         assertTrue(back.doses.isEmpty())
     }
+
+    @Test
+    fun roundTrip_v3_withSkippedAndAmpouleStarts() {
+        val backup = Backup(
+            version = 3,
+            skipped = setOf("2026-06-17", "2026-06-18"),
+            ampouleStarts = setOf("2026-06-21"),
+        )
+        val back = json.decodeFromString<Backup>(json.encodeToString(backup))
+        assertEquals(setOf("2026-06-17", "2026-06-18"), back.skipped)
+        assertEquals(setOf("2026-06-21"), back.ampouleStarts)
+    }
+
+    @Test
+    fun oldJson_v2_withoutNewFields_decodesToEmpty() {
+        val old = """{"version":2,"schedule":{},"intake":[],"comments":{},"lang":"","doses":{}}"""
+        val back = json.decodeFromString<Backup>(old)
+        assertTrue(back.skipped.isEmpty())
+        assertTrue(back.ampouleStarts.isEmpty())
+    }
 }

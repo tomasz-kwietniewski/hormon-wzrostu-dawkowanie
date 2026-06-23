@@ -17,7 +17,9 @@ class ReminderReceiver : BroadcastReceiver() {
         if (schedule.enabled && schedule.isValid()) {
             val today = LocalDate.now()
             val repo = ScheduleRepository(context)
-            val next = pl.hormonwzrostu.data.nextDose(schedule, repo.loadIntake(), repo.loadDoses(), today)
+            val next = pl.hormonwzrostu.data.nextDose(
+                schedule, repo.loadIntake(), repo.loadDoses(), today, repo.loadAmpouleStarts(),
+            )
             if (next != null) {
                 val title = context.getString(
                     R.string.notif_title,

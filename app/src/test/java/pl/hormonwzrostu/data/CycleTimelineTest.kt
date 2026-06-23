@@ -102,6 +102,46 @@ class CycleTimelineTest {
     }
 
     @Test
+    fun ampouleAnchor_resetsCycleAndRenumbersDay() {
+        // 7 dni po 0,8 (ampułka ma jeszcze sporo), ale 5. dzień ręcznie = nowa ampułka.
+        val anchor = setOf("2026-01-05")
+        val tl = buildTimeline(sched(10.0, 0.8), dates("2026-01-01", 7), emptyMap(), anchor)
+        assertEquals(listOf(1, 2, 3, 4), tl.take(4).map { it.dayInCycle })
+        assertTrue(tl.take(4).all { it.cycleNumber == 1 })
+        // 2026-01-05: re-kotwica -> dzień 1 nowej (drugiej) ampułki, dawka znów 0,8.
+        assertEquals(2, tl[4].cycleNumber)
+        assertEquals(1, tl[4].dayInCycle)
+        assertEquals(0.8, tl[4].plannedMg, 1e-9)
+        assertEquals(2, tl[5].dayInCycle)
+        assertEquals(2, tl[6].cycleNumber)
+    }
+
+    @Test
+    fun ampouleAnchor_onStartDate_isIgnored() {
+        // Kotwica na samym dniu startu nie tworzy „drugiej" ampułki — dzień 1 zostaje dniem 1.
+        val anchor = setOf("2026-01-01")
+        val tl = buildTimeline(sched(10.0, 0.8), dates("2026-01-01", 3), emptyMap(), anchor)
+        assertEquals(1, tl[0].cycleNumber)
+        assertEquals(1, tl[0].dayInCycle)
+    }
+
+    @Test
+    fun nextDose_withAnchorOnDate_isNewAmpouleDay1() {
+        // Po 7 podaniach projekcja na 2026-01-08 z re-kotwicą = dzień 1, pełna dawka 0,8.
+        val nd = nextDose(
+            sched(10.0, 0.8),
+            dates("2026-01-01", 7),
+            emptyMap(),
+            LocalDate.parse("2026-01-08"),
+            setOf("2026-01-08"),
+        )!!
+        assertEquals(2, nd.cycleNumber)
+        assertEquals(1, nd.dayInCycle)
+        assertEquals(0.8, nd.plannedMg, 1e-9)
+        assertFalse(nd.isLastInCycle)
+    }
+
+    @Test
     fun nextDose_beforeStart_isNull() {
         assertNull(nextDose(sched(start = "2026-01-10"), emptySet(), emptyMap(), LocalDate.parse("2026-01-05")))
     }

@@ -58,9 +58,13 @@ class MainActivity : ComponentActivity() {
                         intake = vm.intake,
                         comments = vm.comments,
                         doses = vm.doses,
+                        skipped = vm.skipped,
+                        ampouleStarts = vm.ampouleStarts,
                         onSetGiven = { date, given -> vm.setGiven(date, given) },
+                        onSetSkipped = { date, skip -> vm.setSkipped(date, skip) },
                         onSetComment = { date, text -> vm.setComment(date, text) },
                         onSetActualDose = { date, mg -> vm.setActualDose(date, mg) },
+                        onSetAmpouleStart = { date, anchor -> vm.setAmpouleStart(date, anchor) },
                         onOpenSettings = { screen = Screen.SETTINGS },
                     )
 

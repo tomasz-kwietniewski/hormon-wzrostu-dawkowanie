@@ -19,6 +19,7 @@
     <string name="btn_mark_given">Oznacz: podano</string>
     <string name="btn_unmark_given">Cofnij (nie podano)</string>
     <string name="given_today_done">Podano dzisiaj ✓</string>
+    <string name="skipped_today_done">Pominięto dzisiaj ✗</string>
 
     <string name="summary_reminder_at">Przypomnienie codziennie o</string>
     <string name="summary_scheme">Schemat</string>
@@ -74,6 +75,8 @@
     <string name="mark_not_given">Oznacz: nie podano</string>
     <string name="edit_day_info">Dzień %1$d/%2$d • %3$s mg</string>
     <string name="edit_current">Teraz: %1$s</string>
+    <string name="btn_new_ampoule">Nowa ampułka od tego dnia</string>
+    <string name="btn_clear_ampoule">Cofnij: nowa ampułka</string>
     <string name="field_comment">Komentarz (opcjonalnie)</string>
     <string name="field_actual_dose">Podana dawka (mg)</string>
     <string name="csv_col_date">Data</string>

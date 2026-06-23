@@ -1,7 +1,9 @@
 package pl.hormonwzrostu.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +33,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +61,9 @@ internal val GivenColor = Color(0xFF2E7D32)
 internal val MissedColor = Color(0xFFC62828)
 private val TodayColor = Color(0xFFF9A825)
 private val UpcomingColor = Color(0xFF4A4A4A)
+
+// Obwódka dnia, od którego liczona jest nowa ampułka (re-kotwica).
+internal val AmpouleStartColor = Color(0xFF80D8FF)
 
 internal fun statusColor(status: DayStatus): Color = when (status) {
     DayStatus.GIVEN -> GivenColor
@@ -88,6 +95,8 @@ internal fun statusWord(status: DayStatus): String = stringResource(
 fun CalendarCard(
     schedule: Schedule,
     intake: Set<String>,
+    skipped: Set<String>,
+    ampouleStarts: Set<String>,
     today: LocalDate,
     onPickDay: (LocalDate) -> Unit,
 ) {
@@ -137,7 +146,13 @@ fun CalendarCard(
                         for (i in 0 until 7) {
                             val date = week.getOrNull(i)
                             Box(Modifier.weight(1f).aspectRatio(1f), contentAlignment = Alignment.Center) {
-                                if (date != null) DayCell(date, schedule, intake, today, onPickDay)
+                                if (date != null) {
+                                    DayCell(
+                                        date, schedule, intake, skipped, today,
+                                        isAmpouleStart = ampouleStarts.contains(date.toString()),
+                                        onPickDay = onPickDay,
+                                    )
+                                }
                             }
                         }
                     }
@@ -147,7 +162,7 @@ fun CalendarCard(
             var given = 0
             var missed = 0
             for (d in 1..month.lengthOfMonth()) {
-                when (dayStatus(schedule, month.atDay(d), today, intake)) {
+                when (dayStatus(schedule, month.atDay(d), today, intake, skipped)) {
                     DayStatus.GIVEN -> given++
                     DayStatus.MISSED -> missed++
                     else -> {}
@@ -176,18 +191,23 @@ private fun DayCell(
     date: LocalDate,
     schedule: Schedule,
     intake: Set<String>,
+    skipped: Set<String>,
     today: LocalDate,
+    isAmpouleStart: Boolean,
     onPickDay: (LocalDate) -> Unit,
 ) {
-    val status = dayStatus(schedule, date, today, intake)
+    val status = dayStatus(schedule, date, today, intake, skipped)
     val canPick = status != DayStatus.NONE
     val isToday = date.isEqual(today)
+    val shape = RoundedCornerShape(10.dp)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(2.dp)
-            .background(statusColor(status), RoundedCornerShape(10.dp))
+            .background(statusColor(status), shape)
+            // Marker re-kotwicy: jasna obwódka na dniu otwarcia nowej ampułki.
+            .let { if (isAmpouleStart) it.border(2.dp, AmpouleStartColor, shape) else it }
             .let { if (canPick) it.clickable { onPickDay(date) } else it },
         contentAlignment = Alignment.Center,
     ) {
@@ -222,6 +242,13 @@ fun DayEditDialog(
     plannedMg: Double,
     actualMg: Double?,
     initialComment: String,
+    isAmpouleStart: Boolean,
+    canToggleAmpoule: Boolean,
+    canPrev: Boolean,
+    canNext: Boolean,
+    onPrev: () -> Unit,
+    onNext: () -> Unit,
+    onToggleAmpouleStart: () -> Unit,
     onConfirm: (given: Boolean, comment: String, doseMg: Double?) -> Unit,
     onSaveComment: (comment: String) -> Unit,
     onDismiss: () -> Unit,
@@ -231,81 +258,136 @@ fun DayEditDialog(
     // Pole dawki ma sens dla dni, które realnie można podać (nie dla przyszłych).
     val canDose = status != DayStatus.UPCOMING && status != DayStatus.NONE
 
+    val density = LocalDensity.current
+    val swipeThresholdPx = with(density) { 56.dp.toPx() }
+
     Dialog(onDismissRequest = onDismiss) {
         Card(shape = RoundedCornerShape(20.dp)) {
-            Box(Modifier.fillMaxWidth()) {
-                Column(
-                    Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+            Column(
+                Modifier
+                    .padding(20.dp)
+                    // Swipe lewo/prawo = poprzedni/następny dzień (w zakresie start ... dziś).
+                    .pointerInput(date, canPrev, canNext) {
+                        var dragX = 0f
+                        detectHorizontalDragGestures(
+                            onDragStart = { dragX = 0f },
+                            onDragCancel = { dragX = 0f },
+                            onDragEnd = {
+                                if (dragX > swipeThresholdPx && canPrev) onPrev()
+                                else if (dragX < -swipeThresholdPx && canNext) onNext()
+                                dragX = 0f
+                            },
+                            onHorizontalDrag = { _, amount -> dragX += amount },
+                        )
+                    },
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                // Nagłówek: ‹ data › oraz zamknięcie.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    NavArrow("‹", enabled = canPrev, onClick = onPrev)
                     Text(
                         date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)),
                         style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(end = 36.dp),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f),
                     )
-                    if (dayInCycle != null) {
+                    NavArrow("›", enabled = canNext, onClick = onNext)
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_close),
+                            contentDescription = stringResource(R.string.btn_cancel),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                if (dayInCycle != null) {
+                    Text(
+                        stringResource(
+                            R.string.edit_day_info,
+                            dayInCycle,
+                            schedule.daysPerCycle,
+                            formatMg(actualMg ?: plannedMg),
+                        ),
+                    )
+                }
+                Text(stringResource(R.string.edit_current, statusWord(status)))
+
+                if (canDose) {
+                    OutlinedTextField(
+                        value = doseText,
+                        onValueChange = { doseText = it },
+                        label = { Text(stringResource(R.string.field_actual_dose)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it },
+                    label = { Text(stringResource(R.string.field_comment)) },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                // Re-kotwica ampułki — tylko dla dni, które można podać i nie będących dniem startu.
+                if (canToggleAmpoule && canDose) {
+                    TextButton(
+                        onClick = onToggleAmpouleStart,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         Text(
                             stringResource(
-                                R.string.edit_day_info,
-                                dayInCycle,
-                                schedule.daysPerCycle,
-                                formatMg(actualMg ?: plannedMg),
+                                if (isAmpouleStart) R.string.btn_clear_ampoule else R.string.btn_new_ampoule,
                             ),
+                            color = AmpouleStartColor,
                         )
                     }
-                    Text(stringResource(R.string.edit_current, statusWord(status)))
-
-                    if (canDose) {
-                        OutlinedTextField(
-                            value = doseText,
-                            onValueChange = { doseText = it },
-                            label = { Text(stringResource(R.string.field_actual_dose)) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-
-                    OutlinedTextField(
-                        value = comment,
-                        onValueChange = { comment = it },
-                        label = { Text(stringResource(R.string.field_comment)) },
-                        minLines = 2,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Button(
-                            onClick = { onConfirm(true, comment, parseDose(doseText, plannedMg)) },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = GivenColor, contentColor = Color.White),
-                        ) { Text(stringResource(R.string.legend_given)) }
-                        Button(
-                            onClick = { onConfirm(false, comment, null) },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = MissedColor, contentColor = Color.White),
-                        ) { Text(stringResource(R.string.legend_missed)) }
-                    }
-                    TextButton(
-                        onClick = { onSaveComment(comment) },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(R.string.btn_save)) }
                 }
 
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.TopEnd),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_close),
-                        contentDescription = stringResource(R.string.btn_cancel),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Button(
+                        onClick = { onConfirm(true, comment, parseDose(doseText, plannedMg)) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = GivenColor, contentColor = Color.White),
+                    ) { Text(stringResource(R.string.legend_given)) }
+                    Button(
+                        onClick = { onConfirm(false, comment, null) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = MissedColor, contentColor = Color.White),
+                    ) { Text(stringResource(R.string.legend_missed)) }
                 }
+                TextButton(
+                    onClick = { onSaveComment(comment) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(stringResource(R.string.btn_save)) }
             }
         }
+    }
+}
+
+/** Strzałka nawigacji dni w oknie edycji; wyszarzona, gdy nieaktywna. */
+@Composable
+private fun NavArrow(glyph: String, enabled: Boolean, onClick: () -> Unit) {
+    IconButton(onClick = onClick, enabled = enabled) {
+        Text(
+            glyph,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (enabled) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+            },
+        )
     }
 }
 

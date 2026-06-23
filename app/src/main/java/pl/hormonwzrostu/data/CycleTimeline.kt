@@ -44,18 +44,27 @@ private fun sortedDates(intake: Set<String>, start: LocalDate): List<LocalDate> 
 
 private data class WalkState(val remainingTh: Long, val cycle: Int, val dayInCycle: Int)
 
+/**
+ * Czy [date] jest ręczną granicą nowej ampułki (re-kotwicą). Dzień startu schematu jest
+ * niejawną pierwszą kotwicą — nie traktujemy go jako re-kotwicy, by nie zerować dnia 1.
+ */
+private fun isAmpouleAnchor(date: LocalDate, p: Prep, ampouleStarts: Set<String>): Boolean =
+    date != p.start && ampouleStarts.contains(date.toString())
+
 /** Przechodzi po datach symulując zużycie ampułki; opcjonalnie zbiera zdarzenia. */
 private fun walk(
     p: Prep,
     dates: List<LocalDate>,
     doses: Map<String, Double>,
+    ampouleStarts: Set<String>,
     collect: ((DoseEvent) -> Unit)?,
 ): WalkState {
     var remaining = p.ampouleTh
     var cycle = 1
     var dayInCycle = 0
     for (date in dates) {
-        if (remaining <= 0L) {
+        // Nowa ampułka, gdy poprzednia się wyczerpała albo ten dzień jest ręczną re-kotwicą.
+        if (remaining <= 0L || isAmpouleAnchor(date, p, ampouleStarts)) {
             cycle++; remaining = p.ampouleTh; dayInCycle = 0
         }
         dayInCycle++
@@ -81,10 +90,11 @@ fun buildTimeline(
     schedule: Schedule,
     intake: Set<String>,
     doses: Map<String, Double>,
+    ampouleStarts: Set<String> = emptySet(),
 ): List<DoseEvent> {
     val p = prep(schedule) ?: return emptyList()
     val out = ArrayList<DoseEvent>()
-    walk(p, sortedDates(intake, p.start), doses) { out.add(it) }
+    walk(p, sortedDates(intake, p.start), doses, ampouleStarts) { out.add(it) }
     return out
 }
 
@@ -98,16 +108,18 @@ fun nextDose(
     intake: Set<String>,
     doses: Map<String, Double>,
     onDate: LocalDate,
+    ampouleStarts: Set<String> = emptySet(),
 ): NextDose? {
     val p = prep(schedule) ?: return null
     if (onDate.isBefore(p.start)) return null
     val priorDates = sortedDates(intake, p.start).filter { it.isBefore(onDate) }
-    val s = walk(p, priorDates, doses, null)
+    val s = walk(p, priorDates, doses, ampouleStarts, null)
 
     var remaining = s.remainingTh
     var cycle = s.cycle
     var dayInCycle = s.dayInCycle
-    if (remaining <= 0L) {
+    // Re-kotwica na sam [onDate] też otwiera nową ampułkę przy projekcji.
+    if (remaining <= 0L || isAmpouleAnchor(onDate, p, ampouleStarts)) {
         cycle++; remaining = p.ampouleTh; dayInCycle = 0
     }
     dayInCycle++

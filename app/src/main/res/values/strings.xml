@@ -21,6 +21,7 @@
     <string name="btn_mark_given">Mark as given</string>
     <string name="btn_unmark_given">Undo (not given)</string>
     <string name="given_today_done">Given today ✓</string>
+    <string name="skipped_today_done">Skipped today ✗</string>
 
     <string name="summary_reminder_at">Daily reminder at</string>
     <string name="summary_scheme">Scheme</string>
@@ -76,6 +77,8 @@
     <string name="mark_not_given">Mark as not given</string>
     <string name="edit_day_info">Day %1$d/%2$d • %3$s mg</string>
     <string name="edit_current">Now: %1$s</string>
+    <string name="btn_new_ampoule">New ampoule from this day</string>
+    <string name="btn_clear_ampoule">Undo: new ampoule</string>
     <string name="field_comment">Comment (optional)</string>
     <string name="field_actual_dose">Given dose (mg)</string>
     <string name="csv_col_date">Date</string>
