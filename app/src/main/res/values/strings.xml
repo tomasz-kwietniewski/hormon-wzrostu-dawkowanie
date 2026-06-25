@@ -79,6 +79,8 @@
     <string name="edit_current">Now: %1$s</string>
     <string name="btn_new_ampoule">New ampoule from this day</string>
     <string name="btn_clear_ampoule">Undo: new ampoule</string>
+    <string name="edit_status_label">Status</string>
+    <string name="save_and_close_hint">Saves changes and closes</string>
     <string name="field_comment">Comment (optional)</string>
     <string name="field_actual_dose">Given dose (mg)</string>
     <string name="dose_helper">Affects ampoule usage tracking. Planned: %1$s mg</string>
