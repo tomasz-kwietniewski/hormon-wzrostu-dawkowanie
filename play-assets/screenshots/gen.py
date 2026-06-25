@@ -127,6 +127,16 @@ def calendar_card():
       {legend}
     </div>'''
 
+def summary_card():
+    return f'''<div class="card">
+      <div class="s-med">{MED}</div>
+      <div class="s-row"><div class="s-l">Przypomnienie codziennie o</div><div class="s-v">08:00</div></div>
+      <div class="s-row"><div class="s-l">Schemat</div><div class="s-v">0,7 mg × 6 dni + 1,8 mg</div></div>
+      <div class="s-row"><div class="s-l">Ampułka</div><div class="s-v">6 mg na 7 dni</div></div>
+      <div class="s-row"><div class="s-l">Start cyklu</div><div class="s-v">6 czerwca 2026</div></div>
+      <div class="s-row"><div class="s-l">Powiadomienia</div><div class="s-v">włączone</div></div>
+    </div>'''
+
 def settings_top():
     return f'''<div class="topbar settings">
       <div class="cancel">Cofnij</div>
@@ -300,23 +310,33 @@ html,body {{ width:1080px; height:1920px; font-family:{FONT}; }}
 </div>
 </body></html>'''
 
-# --- Złożenie 4 ekranów ---
+# --- Złożenie 5 ekranów (nazwa pliku = klucz) ---
 screens = {
-  "01-dashboard": shell(
+  "01-ekran-glowny": shell(
       "Kalendarz i dawka<br>na ekranie głównym",
       "Dzisiejsza dawka, podpowiedź miejsca wkłucia i historia podań",
       topbar() + f'<div class="body">{today_card()}{calendar_card()}</div>'),
 
-  "02-dzien": shell(
+  "02-okno-dnia": shell(
       "Zapisz dzień: dawka,<br>miejsce i status",
       "Wybierasz status, miejsce i dawkę — zatwierdza przycisk „Zapisz”",
       topbar() + f'<div class="body">{calendar_card()}</div>' + day_dialog()),
 
-  "03-ustawienia": shell(
+  "03-eksport-podsumowanie": shell(
+      "Eksport do Excela<br>i podsumowanie",
+      "Pełna historia podań do arkusza • przejrzysty schemat dawkowania",
+      topbar() + f'''<div class="body">
+        <button class="btn-fill" style="margin-top:0">Eksportuj do Excela</button>
+        {summary_card()}
+        <button class="btn-fill" style="margin-top:0">Ustawienia / zmiana dawkowania</button>
+      </div>'''),
+
+  "04-ustawienia": shell(
       "Auto-liczenie<br>ostatniej dawki",
-      "Wpisz pojemność ampułki i dawkę — resztę policzy aplikacja",
+      "Wpisz lek, pojemność ampułki i dawkę — resztę policzy aplikacja",
       settings_top() + f'''<div class="body">
         {field("Imię dziecka", CHILD)}
+        {field("Nazwa leku", MED)}
         {field("Pojemność ampułki (mg)", "6")}
         {field("Dawka dzienna (mg)", "0,7")}
         <div class="calc"><div class="calc-t">Wyliczony cykl i ostatnia dawka</div>
@@ -325,7 +345,7 @@ screens = {
         <div class="obtn">Godzina przypomnienia: 08:00</div>
       </div>'''),
 
-  "04-jezyk-kopie": shell(
+  "05-jezyk-kopie": shell(
       "Polski / English,<br>kopie i eksport",
       "Dane tylko lokalnie • eksport do Excela • kopia zapasowa",
       settings_top() + f'''<div class="body">
