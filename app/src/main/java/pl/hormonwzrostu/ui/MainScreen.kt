@@ -174,31 +174,28 @@ fun MainScreen(
             isAmpouleStart = ampouleStarts.contains(date.toString()),
             canToggleAmpoule = !isStartDay,
             selectedSite = sites[date.toString()],
-            suggestedSite = pl.hormonwzrostu.data.InjectionSites.suggestedFor(sites, date),
-            onSetSite = { token -> onSetSite(date, token) },
+            suggestedSite = InjectionSites.suggestedFor(sites, date),
             canPrev = canPrev,
             canNext = canNext,
             onPrev = { if (canPrev) selected = date.minusDays(1) },
             onNext = { if (canNext) selected = date.plusDays(1) },
-            onToggleAmpouleStart = {
-                val enable = !ampouleStarts.contains(date.toString())
-                onSetAmpouleStart(date, enable)
-                // Re-kotwica ma sens na dniu podania — włączając ją, oznaczamy dzień jako podany.
-                if (enable) onSetGiven(date, true)
-            },
-            onConfirm = { given, comment, doseMg ->
+            onSave = { given, comment, doseMg, site, ampouleStart ->
                 onSetComment(date, comment)
-                if (given) {
-                    onSetActualDose(date, doseMg)
-                    onSetGiven(date, true)
-                } else {
-                    onSetActualDose(date, null)
-                    onSetSkipped(date, true)
+                onSetSite(date, site)
+                onSetAmpouleStart(date, ampouleStart)
+                // Re-kotwica implikuje podanie — gdy zaznaczono ampułkę bez statusu, traktuj jak „podano".
+                val effectiveGiven = if (ampouleStart && given == null) true else given
+                when (effectiveGiven) {
+                    true -> {
+                        onSetActualDose(date, doseMg)
+                        onSetGiven(date, true)
+                    }
+                    false -> {
+                        onSetActualDose(date, null)
+                        onSetSkipped(date, true)
+                    }
+                    null -> {}
                 }
-                selected = null
-            },
-            onSaveComment = { comment ->
-                onSetComment(date, comment)
                 selected = null
             },
             onDismiss = { selected = null },

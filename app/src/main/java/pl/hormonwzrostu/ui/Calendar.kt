@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -21,8 +23,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -236,9 +239,9 @@ private fun LegendItem(color: Color, label: String) {
 }
 
 /**
- * Okno edycji jednego dnia: data, dzień cyklu/dawka, pole faktycznie podanej dawki, komentarz
- * oraz akcje Podano (zielony) / Pominięto (czerwony) / Zapisz (sam komentarz).
- * Pole dawki widoczne, gdy dzień można podać (dziś, wstecz). „X" zamyka bez zmian.
+ * Okno edycji jednego dnia z ODROCZONYM zapisem: edytujesz dawkę, komentarz, miejsce i ew.
+ * „nową ampułkę", a status (Podano/Pominięto) tylko ZAZNACZASZ — dopiero „Zapisz" zatwierdza
+ * całość i zamyka okno. „✕" zamyka bez zapisu. Strzałki/swipe przełączają sąsiednie dni.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -254,19 +257,28 @@ fun DayEditDialog(
     canToggleAmpoule: Boolean,
     selectedSite: String?,
     suggestedSite: String,
-    onSetSite: (String?) -> Unit,
     canPrev: Boolean,
     canNext: Boolean,
     onPrev: () -> Unit,
     onNext: () -> Unit,
-    onToggleAmpouleStart: () -> Unit,
-    onConfirm: (given: Boolean, comment: String, doseMg: Double?) -> Unit,
-    onSaveComment: (comment: String) -> Unit,
+    onSave: (given: Boolean?, comment: String, doseMg: Double?, site: String?, ampouleStart: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var comment by remember(date) { mutableStateOf(initialComment) }
     var doseText by remember(date) { mutableStateOf(formatMg(actualMg ?: plannedMg)) }
-    // Pole dawki ma sens dla dni, które realnie można podać (nie dla przyszłych).
+    var siteLocal by remember(date) { mutableStateOf(selectedSite) }
+    var ampouleLocal by remember(date) { mutableStateOf(isAmpouleStart) }
+    // Wybór statusu jest lokalny, zapisywany dopiero „Zapisz". Start = odbicie zapisanego stanu dnia.
+    var chosenGiven by remember(date) {
+        mutableStateOf(
+            when (status) {
+                DayStatus.GIVEN -> true
+                DayStatus.MISSED -> false
+                else -> null
+            },
+        )
+    }
+    // Pole dawki/miejsce/status mają sens dla dni, które realnie można podać (nie dla przyszłych).
     val canDose = status != DayStatus.UPCOMING && status != DayStatus.NONE
 
     val density = LocalDensity.current
@@ -316,17 +328,22 @@ fun DayEditDialog(
                     }
                 }
 
-                if (dayInCycle != null) {
-                    Text(
-                        stringResource(
-                            R.string.edit_day_info,
-                            dayInCycle,
-                            schedule.daysPerCycle,
-                            formatMg(actualMg ?: plannedMg),
-                        ),
+                // Podtytuł: status słowny + (gdy podano) dzień cyklu i dawka.
+                val subtitle = if (dayInCycle != null) {
+                    statusWord(status) + " · " + stringResource(
+                        R.string.edit_day_info,
+                        dayInCycle,
+                        schedule.daysPerCycle,
+                        formatMg(actualMg ?: plannedMg),
                     )
+                } else {
+                    statusWord(status)
                 }
-                Text(stringResource(R.string.edit_current, statusWord(status)))
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
                 if (canDose) {
                     // Wyróżnione pole dawki: tekst pomocniczy z dawką planową, akcent przy korekcie,
@@ -372,7 +389,7 @@ fun DayEditDialog(
                         stringResource(R.string.edit_site_label),
                         style = MaterialTheme.typography.labelLarge,
                     )
-                    if (selectedSite == null) {
+                    if (siteLocal == null) {
                         Text(
                             stringResource(R.string.site_suggested, siteLabel(suggestedSite)),
                             style = MaterialTheme.typography.bodySmall,
@@ -381,52 +398,96 @@ fun DayEditDialog(
                     }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         InjectionSites.ROTATION.forEach { token ->
-                            val isSel = token == selectedSite
+                            val isSel = token == siteLocal
                             FilterChip(
                                 selected = isSel,
-                                onClick = { onSetSite(if (isSel) null else token) },
+                                onClick = { siteLocal = if (isSel) null else token },
                                 label = { Text(siteLabel(token)) },
                             )
                         }
                     }
                 }
 
-                // Re-kotwica ampułki — tylko dla dni, które można podać i nie będących dniem startu.
+                // „Nowa ampułka od tego dnia" — pole wyboru; zapis dopiero przy „Zapisz".
                 if (canToggleAmpoule && canDose) {
-                    TextButton(
-                        onClick = onToggleAmpouleStart,
-                        modifier = Modifier.fillMaxWidth(),
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clickable { ampouleLocal = !ampouleLocal },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text(
-                            stringResource(
-                                if (isAmpouleStart) R.string.btn_clear_ampoule else R.string.btn_new_ampoule,
-                            ),
-                            color = AmpouleStartColor,
+                        Checkbox(checked = ampouleLocal, onCheckedChange = { ampouleLocal = it })
+                        Text(stringResource(R.string.btn_new_ampoule), color = AmpouleStartColor)
+                    }
+                }
+
+                // Status — zaznaczany wybór (NIE zamyka okna); zatwierdza go dopiero „Zapisz".
+                if (canDose) {
+                    Text(
+                        stringResource(R.string.edit_status_label),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        StatusToggle(
+                            selected = chosenGiven == true,
+                            color = GivenColor,
+                            label = stringResource(R.string.legend_given),
+                            onClick = { chosenGiven = true },
+                        )
+                        StatusToggle(
+                            selected = chosenGiven == false,
+                            color = MissedColor,
+                            label = stringResource(R.string.legend_missed),
+                            onClick = { chosenGiven = false },
                         )
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Button(
-                        onClick = { onConfirm(true, comment, parseDose(doseText, plannedMg)) },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = GivenColor, contentColor = Color.White),
-                    ) { Text(stringResource(R.string.legend_given)) }
-                    Button(
-                        onClick = { onConfirm(false, comment, null) },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = MissedColor, contentColor = Color.White),
-                    ) { Text(stringResource(R.string.legend_missed)) }
-                }
-                TextButton(
-                    onClick = { onSaveComment(comment) },
+                Button(
+                    onClick = {
+                        onSave(chosenGiven, comment, parseDose(doseText, plannedMg), siteLocal, ampouleLocal)
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text(stringResource(R.string.btn_save)) }
+                Text(
+                    stringResource(R.string.save_and_close_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
+    }
+}
+
+/** Segmentowany przycisk statusu: wypełniony [color] gdy [selected], inaczej przygaszony obrys. */
+@Composable
+private fun RowScope.StatusToggle(
+    selected: Boolean,
+    color: Color,
+    label: String,
+    onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    val base = Modifier
+        .weight(1f)
+        .height(48.dp)
+        .clip(shape)
+        .clickable(onClick = onClick)
+    val styled = if (selected) {
+        base.background(color)
+    } else {
+        base.border(1.5.dp, MaterialTheme.colorScheme.outline, shape)
+    }
+    Box(styled, contentAlignment = Alignment.Center) {
+        Text(
+            (if (selected) "✓ " else "") + label,
+            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 

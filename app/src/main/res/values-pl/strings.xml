@@ -77,6 +77,8 @@
     <string name="edit_current">Teraz: %1$s</string>
     <string name="btn_new_ampoule">Nowa ampułka od tego dnia</string>
     <string name="btn_clear_ampoule">Cofnij: nowa ampułka</string>
+    <string name="edit_status_label">Status</string>
+    <string name="save_and_close_hint">Zapisuje zmiany i zamyka okno</string>
     <string name="field_comment">Komentarz (opcjonalnie)</string>
     <string name="field_actual_dose">Podana dawka (mg)</string>
     <string name="dose_helper">Wpływa na liczenie zużycia ampułki. Wg planu: %1$s mg</string>
