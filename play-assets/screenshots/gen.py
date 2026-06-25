@@ -369,4 +369,35 @@ for name, html in screens.items():
     with open(p, "w", encoding="utf-8") as f:
         f.write(html)
     print("wrote", p)
+
+# --- Feature graphic 1024x500 (baner listingu Play) ---
+FEATURE = f'''<!doctype html><html lang="pl"><head><meta charset="utf-8">
+<style>
+*{{margin:0;padding:0;box-sizing:border-box;}}
+html,body{{width:1024px;height:500px;font-family:{FONT};}}
+.fbg{{width:1024px;height:500px;background:linear-gradient(160deg,{PRIMARY} 0%,{PRIMARY_DARK} 100%);
+  display:flex;align-items:center;gap:56px;padding:0 84px;}}
+.flogo{{flex:0 0 auto;}}
+.ftxt h1{{color:#fff;font-size:64px;font-weight:800;line-height:1.08;letter-spacing:-1px;}}
+.ftag{{color:#fff;opacity:.9;font-size:30px;font-weight:500;margin-top:18px;}}
+.ffeat{{color:#fff;opacity:.78;font-size:24px;margin-top:14px;}}
+</style></head><body>
+<div class="fbg">
+  <div class="flogo">
+    <svg width="240" height="240" viewBox="0 0 24 24">
+      <path d="M12,2 C12,2 5.5,9.5 5.5,14.5 C5.5,18.09 8.41,21 12,21 C15.59,21 18.5,18.09 18.5,14.5 C18.5,9.5 12,2 12,2 Z" fill="#fff"/>
+      <rect x="10.6" y="10.5" width="2.8" height="8" fill="{PRIMARY}"/>
+      <rect x="8.6" y="13.1" width="6.8" height="2.8" fill="{PRIMARY}"/>
+    </svg>
+  </div>
+  <div class="ftxt">
+    <h1>Hormon Wzrostu<br>Dawkowanie</h1>
+    <div class="ftag">Przypomnienia, kalendarz i eksport podań</div>
+    <div class="ffeat">Dawka dzienna • miejsce wkłucia • kopia zapasowa</div>
+  </div>
+</div>
+</body></html>'''
+with open(os.path.join(BUILD, "feature-1024x500.html"), "w", encoding="utf-8") as f:
+    f.write(FEATURE)
+print("wrote feature-1024x500.html")
 print("OK")
