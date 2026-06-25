@@ -349,7 +349,7 @@ fun DayEditDialog(
                     // Wyróżnione pole dawki: tekst pomocniczy z dawką planową, akcent przy korekcie,
                     // by realne dawki trafiały tutaj (a nie do komentarza).
                     val isCorrection = parseDose(doseText, plannedMg) != null
-                    val accent = if (isCorrection) AmpouleStartColor else MaterialTheme.colorScheme.primary
+                    val accent = if (isCorrection) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
                     OutlinedTextField(
                         value = doseText,
                         onValueChange = { doseText = it },
@@ -393,7 +393,7 @@ fun DayEditDialog(
                         Text(
                             stringResource(R.string.site_suggested, siteLabel(suggestedSite)),
                             style = MaterialTheme.typography.bodySmall,
-                            color = AmpouleStartColor,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -408,15 +408,42 @@ fun DayEditDialog(
                     }
                 }
 
-                // „Nowa ampułka od tego dnia" — pole wyboru; zapis dopiero przy „Zapisz".
+                // „Nowa ampułka od tego dnia" — kafelek z polem wyboru; zaznaczony jest podświetlony.
+                // Zapis dopiero przy „Zapisz". Kolory zależne od motywu (czytelne w jasnym i ciemnym).
                 if (canToggleAmpoule && canDose) {
+                    val ampShape = RoundedCornerShape(10.dp)
+                    val ampBorder = if (ampouleLocal) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.outline
+                    }
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { ampouleLocal = !ampouleLocal },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(ampShape)
+                            .then(
+                                if (ampouleLocal) {
+                                    Modifier.background(MaterialTheme.colorScheme.primaryContainer)
+                                } else {
+                                    Modifier
+                                },
+                            )
+                            .border(1.dp, ampBorder, ampShape)
+                            .clickable { ampouleLocal = !ampouleLocal }
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Checkbox(checked = ampouleLocal, onCheckedChange = { ampouleLocal = it })
-                        Text(stringResource(R.string.btn_new_ampoule), color = AmpouleStartColor)
+                        Text(
+                            stringResource(R.string.btn_new_ampoule),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (ampouleLocal) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                        )
                     }
                 }
 
