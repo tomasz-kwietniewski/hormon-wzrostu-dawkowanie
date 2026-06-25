@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Generator wiernych makiet ekranów aplikacji -> HTML 1080x1920 (pod Sklep Play).
-Odtwarza UI z kodu Compose: kolory motywu, teksty z values-pl, układ Material 3.
+Odtwarza UI z kodu Compose (v1.21): kolory motywu, teksty z values-pl, układ Material 3.
 """
-import datetime, calendar, os, locale
+import datetime, calendar, os
 
 OUT = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(OUT, "build")
@@ -13,6 +13,7 @@ PRIMARY = "#2E6B5E"
 PRIMARY_DARK = "#234f45"
 PRIMARY_CONTAINER = "#B8E9DA"   # M3 primaryContainer dla seed #2E6B5E (jasny teal)
 ON_PRIMARY_CONTAINER = "#00201a"
+TERTIARY = "#7B5EA7"
 SURFACE = "#FBFDFA"
 SURFACE_VARIANT = "#DBE5E0"
 ON_SURFACE = "#191C1B"
@@ -50,6 +51,7 @@ def cal_grid():
             if d is None:
                 tds.append('<div class="cell empty"></div>')
                 continue
+            extra = ""
             if d == TODAY_DATE.day:
                 bg, fg, bold = TODAY, "#1A1A1A", "700"
             elif d < TODAY_DATE.day and d in MISSED_DAYS:
@@ -58,8 +60,11 @@ def cal_grid():
                 bg, fg, bold = GIVEN, "#fff", "400"; given += 1
             else:
                 bg, fg, bold = UPCOMING, UPCOMING_TXT, "400"
+            # Marker re-kotwicy „nowa ampułka" — obwódka na dniu otwarcia ampułki.
+            if d == 8:
+                extra = "box-shadow:inset 0 0 0 4px #80D8FF;"
             tds.append(
-                f'<div class="cell" style="background:{bg};color:{fg};font-weight:{bold}">{d}</div>')
+                f'<div class="cell" style="background:{bg};color:{fg};font-weight:{bold};{extra}">{d}</div>')
         html_rows.append('<div class="week">' + "".join(tds) + "</div>")
     return "\n".join(html_rows), given, missed
 
@@ -95,11 +100,12 @@ def today_card():
     return f'''<div class="card today">
       <div class="t-title">Dzisiejsza dawka</div>
       <div class="t-dose">0,7 mg</div>
-      <div class="t-day">{CHILD} • dzień 3/7</div>
+      <div class="t-day">{CHILD} • dzień 3/~7</div>
+      <div class="t-site">Następne miejsce: prawe ramię</div>
       <button class="btn-fill">Oznacz: podano</button>
     </div>'''
 
-def calendar_card(compact=False):
+def calendar_card():
     legend = f'''<div class="legend">
       <span><i style="background:{GIVEN}"></i>Podano</span>
       <span><i style="background:{MISSED}"></i>Pominięto</span>
@@ -121,48 +127,65 @@ def calendar_card(compact=False):
       {legend}
     </div>'''
 
-def summary_card():
-    return f'''<div class="card">
-      <div class="s-med">{MED}</div>
-      <div class="s-row"><div class="s-l">Przypomnienie codziennie o</div><div class="s-v">08:00</div></div>
-      <div class="s-row"><div class="s-l">Schemat</div><div class="s-v">0,7 mg × 6 dni + 1,8 mg</div></div>
-      <div class="s-row"><div class="s-l">Ampułka</div><div class="s-v">6 mg na 7 dni</div></div>
-      <div class="s-row"><div class="s-l">Powiadomienia</div><div class="s-v">włączone</div></div>
+def settings_top():
+    return f'''<div class="topbar settings">
+      <div class="cancel">Cofnij</div>
+      <div class="title-s">Ustawienia dawkowania</div>
     </div>'''
 
-def field(label, value, hint=False):
-    return f'''<div class="tf {'tf-hint' if hint else ''}">
+def field(label, value):
+    return f'''<div class="tf">
       <span class="tf-lab">{label}</span>
       <span class="tf-val">{value}</span>
     </div>'''
 
-def settings_top():
-    return f'''<div class="topbar settings">
-      <div class="cancel">Anuluj</div>
-      <div class="title-s">Ustawienia dawkowania</div>
-    </div>'''
+SITES = ["lewe udo", "prawe ramię", "lewy pośladek", "prawy brzuch",
+         "lewe ramię", "prawe udo", "lewy brzuch", "prawy pośladek"]
+
+def site_chips(selected="lewe udo"):
+    out = []
+    for s in SITES:
+        cls = "dchip sel" if s == selected else "dchip"
+        out.append(f'<div class="{cls}">{s}</div>')
+    return '<div class="chipgrid">' + "".join(out) + "</div>"
 
 def day_dialog():
     return f'''<div class="scrim">
       <div class="dialog">
-        <div class="dlg-x">✕</div>
-        <div class="dlg-title">9 czerwca 2026</div>
-        <div class="dlg-info">Dzień 7/7 • 1,8 mg</div>
-        <div class="dlg-cur">Teraz: Podano</div>
+        <div class="dlg-head">
+          <span class="dlg-chev">‹</span>
+          <span class="dlg-date">8 czerwca 2026</span>
+          <span class="dlg-chev">›</span>
+          <span class="dlg-x">✕</span>
+        </div>
+        <div class="dlg-sub">Podano · Dzień 4/7 • 0,7 mg</div>
+        <div class="otf">
+          <div class="otf-lab" style="color:{PRIMARY}">Podana dawka (mg)</div>
+          <div class="otf-val">0,7</div>
+        </div>
+        <div class="dlg-helper">Wpływa na liczenie zużycia ampułki. Wg planu: 0,7 mg</div>
         <div class="otf">
           <div class="otf-lab">Komentarz (opcjonalnie)</div>
-          <div class="otf-val">Ostatnia z ampułki — jutro nowa.</div>
+          <div class="otf-val">rano, bez problemu</div>
         </div>
-        <div class="dlg-btns">
-          <button class="btn-given">Podano</button>
-          <button class="btn-missed">Pominięto</button>
+        <div class="dlg-seclab">Miejsce wkłucia</div>
+        {site_chips()}
+        <div class="amp-tile">
+          <span class="amp-box"></span>
+          <span class="amp-txt">Nowa ampułka od tego dnia</span>
         </div>
-        <button class="btn-text">Zapisz</button>
+        <div class="dlg-seclab">Status</div>
+        <div class="stat-row">
+          <div class="stat on-g">✓ Podano</div>
+          <div class="stat off">Pominięto</div>
+        </div>
+        <button class="btn-fill">Zapisz</button>
+        <div class="save-hint">Zapisuje zmiany i zamyka okno</div>
       </div>
     </div>'''
 
 # --- Powłoka marketingowa 1080x1920 ---
-def shell(caption, sub, inner, screen_extra="", scrim=False):
+def shell(caption, sub, inner):
     return f'''<!doctype html><html lang="pl"><head><meta charset="utf-8">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
@@ -170,13 +193,13 @@ html,body {{ width:1080px; height:1920px; font-family:{FONT}; }}
 .bg {{ width:1080px; height:1920px;
   background:linear-gradient(160deg,{PRIMARY} 0%,{PRIMARY_DARK} 100%);
   display:flex; flex-direction:column; align-items:center; }}
-.caption {{ color:#fff; text-align:center; padding:70px 70px 0; }}
-.caption h1 {{ font-size:58px; font-weight:800; line-height:1.12; letter-spacing:-0.5px; }}
-.caption p {{ font-size:30px; font-weight:400; opacity:.85; margin-top:18px; }}
-.phone {{ position:relative; margin-top:54px; width:760px; height:1500px;
+.caption {{ color:#fff; text-align:center; padding:64px 70px 0; }}
+.caption h1 {{ font-size:56px; font-weight:800; line-height:1.12; letter-spacing:-0.5px; }}
+.caption p {{ font-size:29px; font-weight:400; opacity:.85; margin-top:16px; }}
+.phone {{ position:relative; margin-top:48px; width:760px; height:1520px;
   background:#0c0f0e; border-radius:62px; padding:20px;
   box-shadow:0 30px 80px rgba(0,0,0,.35); }}
-.screen {{ position:relative; width:720px; height:1460px; background:{SURFACE};
+.screen {{ position:relative; width:720px; height:1480px; background:{SURFACE};
   border-radius:44px; overflow:hidden; }}
 .statusbar {{ height:44px; display:flex; align-items:center; justify-content:space-between;
   padding:0 28px; color:{ON_SURFACE}; font-size:22px; font-weight:600; }}
@@ -194,11 +217,12 @@ html,body {{ width:1080px; height:1920px; font-family:{FONT}; }}
 .body {{ padding:24px; display:flex; flex-direction:column; gap:24px; }}
 .card {{ background:{CARD}; border-radius:26px; padding:30px; box-shadow:0 1px 3px rgba(0,0,0,.10); }}
 .today {{ background:{PRIMARY_CONTAINER}; text-align:center; display:flex;
-  flex-direction:column; align-items:center; gap:12px; padding:38px 30px; }}
+  flex-direction:column; align-items:center; gap:10px; padding:38px 30px; }}
 .t-title {{ font-size:28px; font-weight:500; color:{ON_PRIMARY_CONTAINER}; }}
 .t-dose {{ font-size:84px; font-weight:800; color:{ON_PRIMARY_CONTAINER}; line-height:1; }}
 .t-day {{ font-size:28px; color:{ON_PRIMARY_CONTAINER}; }}
-.btn-fill {{ margin-top:14px; width:100%; border:none; background:{PRIMARY}; color:#fff;
+.t-site {{ font-size:25px; color:{ON_PRIMARY_CONTAINER}; opacity:.92; }}
+.btn-fill {{ margin-top:12px; width:100%; border:none; background:{PRIMARY}; color:#fff;
   font-size:28px; font-weight:600; padding:22px; border-radius:100px; font-family:{FONT}; }}
 .cal-head {{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }}
 .cal-month {{ font-size:34px; font-weight:600; color:{ON_SURFACE}; text-transform:none; }}
@@ -237,26 +261,35 @@ html,body {{ width:1080px; height:1920px; font-family:{FONT}; }}
 .chip.sel {{ background:{PRIMARY_CONTAINER}; border-color:{PRIMARY_CONTAINER}; color:{ON_PRIMARY_CONTAINER}; }}
 .lab {{ font-size:23px; font-weight:600; color:{ON_SURFACE}; }}
 .hinttxt {{ font-size:21px; color:{ON_SURFACE_VAR}; }}
-/* dialog */
+/* dialog (v1.21) */
 .scrim {{ position:absolute; inset:0; background:rgba(0,0,0,.32);
-  display:flex; align-items:center; justify-content:center; padding:30px; }}
-.dialog {{ width:100%; background:{CARD}; border-radius:34px; padding:36px; position:relative;
-  display:flex; flex-direction:column; gap:18px; box-shadow:0 20px 60px rgba(0,0,0,.4); }}
-.dlg-x {{ position:absolute; top:28px; right:32px; font-size:30px; color:{ON_SURFACE_VAR}; }}
-.dlg-title {{ font-size:36px; font-weight:600; color:{ON_SURFACE}; padding-right:50px; }}
-.dlg-info {{ font-size:27px; color:{ON_SURFACE}; }}
-.dlg-cur {{ font-size:27px; color:{ON_SURFACE}; }}
-.otf {{ border:2px solid {OUTLINE}; border-radius:14px; padding:20px; position:relative; min-height:110px; }}
+  display:flex; align-items:center; justify-content:center; padding:22px; }}
+.dialog {{ width:100%; background:{CARD}; border-radius:34px; padding:32px; position:relative;
+  display:flex; flex-direction:column; gap:16px; box-shadow:0 20px 60px rgba(0,0,0,.4); }}
+.dlg-head {{ display:flex; align-items:center; gap:10px; }}
+.dlg-chev {{ font-size:42px; font-weight:700; color:{PRIMARY}; }}
+.dlg-date {{ flex:1; text-align:center; font-size:34px; font-weight:600; color:{ON_SURFACE}; }}
+.dlg-x {{ font-size:30px; color:{ON_SURFACE_VAR}; padding-left:6px; }}
+.dlg-sub {{ font-size:25px; color:{ON_SURFACE_VAR}; }}
+.dlg-helper {{ font-size:21px; color:{ON_SURFACE_VAR}; margin-top:-6px; }}
+.dlg-seclab {{ font-size:25px; font-weight:600; color:{ON_SURFACE}; }}
+.otf {{ border:2px solid {OUTLINE}; border-radius:14px; padding:18px 20px; position:relative; }}
 .otf-lab {{ position:absolute; top:-14px; left:16px; background:{CARD}; padding:0 8px;
-  font-size:20px; color:{PRIMARY}; }}
-.otf-val {{ font-size:26px; color:{ON_SURFACE}; }}
-.dlg-btns {{ display:flex; gap:18px; }}
-.btn-given {{ flex:1; border:none; background:{GIVEN}; color:#fff; font-size:28px; font-weight:600;
-  padding:22px; border-radius:100px; font-family:{FONT}; }}
-.btn-missed {{ flex:1; border:none; background:{MISSED}; color:#fff; font-size:28px; font-weight:600;
-  padding:22px; border-radius:100px; font-family:{FONT}; }}
-.btn-text {{ background:none; border:none; color:{PRIMARY}; font-size:28px; font-weight:600;
-  padding:14px; font-family:{FONT}; }}
+  font-size:20px; color:{ON_SURFACE_VAR}; }}
+.otf-val {{ font-size:27px; color:{ON_SURFACE}; }}
+.chipgrid {{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }}
+.dchip {{ border:2px solid {OUTLINE}; border-radius:12px; padding:16px; text-align:center;
+  font-size:24px; color:{ON_SURFACE}; }}
+.dchip.sel {{ background:{PRIMARY_CONTAINER}; border-color:{PRIMARY}; color:{ON_PRIMARY_CONTAINER}; font-weight:600; }}
+.amp-tile {{ display:flex; align-items:center; gap:16px; border:2px solid {OUTLINE};
+  border-radius:14px; padding:18px 20px; }}
+.amp-box {{ width:34px; height:34px; border:3px solid {OUTLINE}; border-radius:7px; flex:0 0 auto; }}
+.amp-txt {{ font-size:26px; color:{ON_SURFACE}; }}
+.stat-row {{ display:flex; gap:18px; }}
+.stat {{ flex:1; border-radius:16px; padding:22px; text-align:center; font-size:28px; font-weight:600; }}
+.stat.on-g {{ background:{GIVEN}; color:#fff; }}
+.stat.off {{ background:none; border:3px solid {OUTLINE}; color:{ON_SURFACE_VAR}; }}
+.save-hint {{ font-size:21px; color:{ON_SURFACE_VAR}; text-align:center; }}
 </style></head><body>
 <div class="bg">
   <div class="caption"><h1>{caption}</h1><p>{sub}</p></div>
@@ -271,24 +304,24 @@ html,body {{ width:1080px; height:1920px; font-family:{FONT}; }}
 screens = {
   "01-dashboard": shell(
       "Kalendarz i dawka<br>na ekranie głównym",
-      "Dzisiejsza dawka, historia podań i szybkie „Oznacz: podano”",
+      "Dzisiejsza dawka, podpowiedź miejsca wkłucia i historia podań",
       topbar() + f'<div class="body">{today_card()}{calendar_card()}</div>'),
 
   "02-dzien": shell(
-      "Oznacz podanie<br>i dodaj komentarz",
-      "Podano / pominięto — także wstecz, z notatką do dnia",
+      "Zapisz dzień: dawka,<br>miejsce i status",
+      "Wybierasz status, miejsce i dawkę — zatwierdza przycisk „Zapisz”",
       topbar() + f'<div class="body">{calendar_card()}</div>' + day_dialog()),
 
   "03-ustawienia": shell(
       "Auto-liczenie<br>ostatniej dawki",
-      "Wpisz ampułkę, dawkę i dni — resztę policzy aplikacja",
+      "Wpisz pojemność ampułki i dawkę — resztę policzy aplikacja",
       settings_top() + f'''<div class="body">
         {field("Imię dziecka", CHILD)}
         {field("Pojemność ampułki (mg)", "6")}
         {field("Dawka dzienna (mg)", "0,7")}
-        {field("Liczba dni cyklu (na 1 ampułkę)", "7")}
-        <div class="calc"><div class="calc-t">Wyliczona ostatnia dawka</div>
-          <div class="calc-v">0,7 mg × 6 dni + 1,8 mg (dzień 7)</div></div>
+        <div class="calc"><div class="calc-t">Wyliczony cykl i ostatnia dawka</div>
+          <div class="calc-v">0,7 mg × 6 dni + 1,8 mg (cykl 7 dni)</div></div>
+        <div class="obtn">Dzień startu cyklu: 6 czerwca 2026</div>
         <div class="obtn">Godzina przypomnienia: 08:00</div>
       </div>'''),
 
