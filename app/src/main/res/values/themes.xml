@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Edge-to-edge (Android 15 / targetSdk 35): NIE ustawiamy android:statusBarColor
-         ani navigationBarColor — są wycofane i ignorowane na API 35, a ich obecność
+    <!-- Edge-to-edge (Android 16 / targetSdk 36): NIE ustawiamy android:statusBarColor
+         ani navigationBarColor — są wycofane i ignorowane na API 35+, a ich obecność
          wywołuje ostrzeżenie Play „Edge-to-edge may not display for all users".
          Wygląd pasków systemowych zapewnia enableEdgeToEdge() w MainActivity,
          a wcięcia obsługuje Scaffold (padding). -->
