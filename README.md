@@ -99,10 +99,10 @@ baterię aplikacji na **„Bez ograniczeń"** — aplikacja proponuje to jednym 
 
 ## Budowanie ze źródeł
 
-Android Gradle Plugin 8.7, Kotlin 2.0, Gradle 8.9, JDK 17, compileSdk 35, minSdk 26.
+Android Gradle Plugin 8.9, Kotlin 2.0, Gradle 8.11.1, JDK 17, compileSdk 36, minSdk 26.
 
 - **Android Studio:** otwórz katalog projektu — IDE pobierze SDK i wygeneruje wrapper Gradle.
-- **Wiersz poleceń** (z Gradle 8.9 i Android SDK):
+- **Wiersz poleceń** (z Gradle 8.11.1 i Android SDK):
   ```
   gradle assembleDebug          # APK do testów (debug)
   gradle bundleRelease          # AAB do Sklepu Play (wymaga klucza, patrz niżej)

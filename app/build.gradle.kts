@@ -7,14 +7,14 @@ plugins {
 
 android {
     namespace = "pl.hormonwzrostu"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "pl.hormonwzrostu"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 22
-        versionName = "1.21"
+        targetSdk = 36
+        versionCode = 23
+        versionName = "1.22"
     }
 
     // Stały klucz podpisujący dostarczany przez CI (zmienne środowiskowe z secretów).

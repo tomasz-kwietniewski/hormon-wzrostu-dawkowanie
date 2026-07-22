@@ -106,7 +106,7 @@ Wszystkie materiały w katalogu [`play-assets/`](../play-assets/):
 
 ## 10. Uwagi techniczne
 
-- `targetSdk`/`compileSdk` = 35 (spełnia wymóg aktualnego API).
+- `targetSdk`/`compileSdk` = 36 (Android 16; spełnia wymóg Google Play od 31 sierpnia 2026).
 - `minSdk` = 26 (Android 8.0+).
 - Minifikacja (R8) jest wyłączona — można włączyć później dla mniejszego rozmiaru (są reguły
   ProGuard dla kotlinx.serialization).
