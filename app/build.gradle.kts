@@ -13,8 +13,14 @@ android {
         applicationId = "pl.hormonwzrostu"
         minSdk = 26
         targetSdk = 36
-        versionCode = 23
-        versionName = "1.22"
+        versionCode = 24
+        versionName = "1.23"
+
+        // Pełne symbole debugowania kodu natywnego (bibliotek) w AAB -> czytelne
+        // raporty crashy/ANR natywnych w Play Console. Bez wpływu na działanie apki.
+        ndk {
+            debugSymbolLevel = "FULL"
+        }
     }
 
     // Stały klucz podpisujący dostarczany przez CI (zmienne środowiskowe z secretów).
@@ -38,7 +44,11 @@ android {
             }
         }
         release {
-            isMinifyEnabled = false
+            // R8: usuwanie nieużywanego kodu + obfuskacja. Generuje mapping.txt
+            // (dołączany do AAB) -> czytelne raporty crashy w Play + mniejszy rozmiar.
+            // Model danych (pl.hormonwzrostu.data.**) jest chroniony regułami keep
+            // w proguard-rules.pro, by nie zepsuć serializacji backupów (kotlinx.serialization).
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

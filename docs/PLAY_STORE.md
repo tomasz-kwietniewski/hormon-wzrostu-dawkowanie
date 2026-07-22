@@ -108,8 +108,11 @@ Wszystkie materiały w katalogu [`play-assets/`](../play-assets/):
 
 - `targetSdk`/`compileSdk` = 36 (Android 16; spełnia wymóg Google Play od 31 sierpnia 2026).
 - `minSdk` = 26 (Android 8.0+).
-- Minifikacja (R8) jest wyłączona — można włączyć później dla mniejszego rozmiaru (są reguły
-  ProGuard dla kotlinx.serialization).
+- Minifikacja (R8) włączona od v1.23 (`isMinifyEnabled = true`): mniejszy rozmiar + `mapping.txt`
+  w AAB (czytelne raporty crashy w Play). Model danych `pl.hormonwzrostu.data.**` chroniony
+  regułami keep w `proguard-rules.pro` (bezpieczna serializacja backupów).
+- Symbole debugowania kodu natywnego w AAB (`ndk { debugSymbolLevel = "FULL" }`) — czytelne
+  raporty crashy/ANR natywnych.
 
 ## 11. ⚠️ Konto organizacji — kluczowe dla aplikacji zdrowotnych (wnioski z procesu)
 
