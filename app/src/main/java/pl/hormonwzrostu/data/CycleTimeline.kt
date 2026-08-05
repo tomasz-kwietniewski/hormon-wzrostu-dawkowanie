@@ -2,14 +2,33 @@ package pl.hormonwzrostu.data
 
 import java.time.LocalDate
 
+/**
+ * Stan ampułki *przed* daną dawką — czysta informacja dla UI i powiadomienia.
+ * Nie steruje numeracją dni: nową ampułkę otwiera wyłącznie ręczne oznaczenie.
+ */
+enum class AmpouleState {
+    /** Zapas na co najmniej dwie pełne dawki — zwykły dzień. */
+    NORMAL,
+
+    /** Ostatnia pełna dawka; resztę można dociągnąć i zamknąć ampułkę. */
+    LAST_FULL,
+
+    /** Została już tylko końcówka — mniej niż pełna dawka dzienna. */
+    REMNANT,
+
+    /** Teoretyczna zawartość wyczerpana; ampułka powinna być pusta. */
+    EMPTY,
+}
+
 /** Jedno faktyczne podanie dawki, z pozycją w cyklu wyliczoną z całej historii. */
 data class DoseEvent(
     val date: LocalDate,
     val cycleNumber: Int,    // numer ampułki, 1-based
     val dayInCycle: Int,     // pozycja w ampułce, 1-based
-    val plannedMg: Double,   // dawka wg planu dla tego slotu przy danym stanie ampułki
+    val plannedMg: Double,   // dawka proponowana = zawsze dawka dzienna ze schematu
     val actualMg: Double,    // faktycznie podana (override lub = planned)
-    val isLastInCycle: Boolean, // to podanie domknęło ampułkę
+    val remainingBeforeMg: Double, // teoretyczna zawartość ampułki przed tym podaniem
+    val ampouleState: AmpouleState,
 )
 
 /** Stan następnej (jeszcze niepodanej) dawki — np. dzisiejszej. */
@@ -17,7 +36,8 @@ data class NextDose(
     val cycleNumber: Int,
     val dayInCycle: Int,
     val plannedMg: Double,
-    val isLastInCycle: Boolean,
+    val remainingBeforeMg: Double,
+    val ampouleState: AmpouleState,
 )
 
 // Liczymy w tysięcznych mg na liczbach całkowitych, by uniknąć błędów zmiennoprzecinkowych.
@@ -51,7 +71,20 @@ private data class WalkState(val remainingTh: Long, val cycle: Int, val dayInCyc
 private fun isAmpouleAnchor(date: LocalDate, p: Prep, ampouleStarts: Set<String>): Boolean =
     date != p.start && ampouleStarts.contains(date.toString())
 
-/** Przechodzi po datach symulując zużycie ampułki; opcjonalnie zbiera zdarzenia. */
+/** Stan ampułki przy zapasie [remainingTh] i dawce dziennej [dailyTh] (w tysięcznych mg). */
+private fun stateOf(remainingTh: Long, dailyTh: Long): AmpouleState = when {
+    remainingTh <= 0L -> AmpouleState.EMPTY
+    remainingTh < dailyTh -> AmpouleState.REMNANT
+    remainingTh < 2 * dailyTh -> AmpouleState.LAST_FULL
+    else -> AmpouleState.NORMAL
+}
+
+/**
+ * Przechodzi po datach symulując zużycie ampułki; opcjonalnie zbiera zdarzenia.
+ *
+ * Zapas może zejść poniżej zera i tam zostaje — dozownik bywa niedokładny, więc z ampułki
+ * realnie idzie więcej niż wynika z pojemności. Zeruje go wyłącznie ręczna re-kotwica.
+ */
 private fun walk(
     p: Prep,
     dates: List<LocalDate>,
@@ -63,22 +96,22 @@ private fun walk(
     var cycle = 1
     var dayInCycle = 0
     for (date in dates) {
-        // Nowa ampułka, gdy poprzednia się wyczerpała albo ten dzień jest ręczną re-kotwicą.
-        if (remaining <= 0L || isAmpouleAnchor(date, p, ampouleStarts)) {
+        if (isAmpouleAnchor(date, p, ampouleStarts)) {
             cycle++; remaining = p.ampouleTh; dayInCycle = 0
         }
         dayInCycle++
-        val plannedTh = if (remaining >= 2 * p.dailyTh) p.dailyTh else remaining
-        val actualTh = doses[date.toString()]?.let { toTh(it) }?.takeIf { it > 0L } ?: plannedTh
+        val before = remaining
+        val actualTh = doses[date.toString()]?.let { toTh(it) }?.takeIf { it > 0L } ?: p.dailyTh
         remaining -= actualTh
         collect?.invoke(
             DoseEvent(
                 date = date,
                 cycleNumber = cycle,
                 dayInCycle = dayInCycle,
-                plannedMg = toMg(plannedTh),
+                plannedMg = toMg(p.dailyTh),
                 actualMg = toMg(actualTh),
-                isLastInCycle = remaining <= 0L,
+                remainingBeforeMg = toMg(before),
+                ampouleState = stateOf(before, p.dailyTh),
             ),
         )
     }
@@ -119,15 +152,15 @@ fun nextDose(
     var cycle = s.cycle
     var dayInCycle = s.dayInCycle
     // Re-kotwica na sam [onDate] też otwiera nową ampułkę przy projekcji.
-    if (remaining <= 0L || isAmpouleAnchor(onDate, p, ampouleStarts)) {
+    if (isAmpouleAnchor(onDate, p, ampouleStarts)) {
         cycle++; remaining = p.ampouleTh; dayInCycle = 0
     }
     dayInCycle++
-    val plannedTh = if (remaining >= 2 * p.dailyTh) p.dailyTh else remaining
     return NextDose(
         cycleNumber = cycle,
         dayInCycle = dayInCycle,
-        plannedMg = toMg(plannedTh),
-        isLastInCycle = (remaining - plannedTh) <= 0L,
+        plannedMg = toMg(p.dailyTh),
+        remainingBeforeMg = toMg(remaining),
+        ampouleState = stateOf(remaining, p.dailyTh),
     )
 }

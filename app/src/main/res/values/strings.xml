@@ -16,7 +16,10 @@
     <string name="cycle_not_started">The cycle hasn\'t started yet (start date is in the future).</string>
     <string name="day_of_cycle">%1$s • day %2$d/%3$d</string>
     <string name="day_of_cycle_est">%1$s • day %2$d/~%3$d</string>
-    <string name="last_dose_warning">⚠ Last dose from the ampoule — open a new one tomorrow.</string>
+    <!-- Ampoule state hints — shown on today\'s card, in the day dialog and in the notification. -->
+    <string name="ampoule_last_full">⚠ There is still %1$s mg in the ampoule - you can give it all and finish the ampoule.</string>
+    <string name="ampoule_remnant">⚠ Only about %1$s mg left in the ampoule - this is the last bit.</string>
+    <string name="ampoule_empty">⚠ The ampoule should be empty. After opening a new one, mark \"New ampoule\".</string>
     <string name="mg_value">%1$s mg</string>
     <string name="btn_mark_given">Mark as given</string>
     <string name="btn_unmark_given">Undo (not given)</string>
@@ -124,5 +127,4 @@
     <string name="channel_desc">Daily reminder about the medicine dose at a set time.</string>
     <string name="notif_title">%1$s — today %2$s mg</string>
     <string name="notif_text">Day %1$d/%2$d of the cycle. %3$s</string>
-    <string name="notif_last_suffix">\n⚠ Last dose from the ampoule — open a new one tomorrow.</string>
 </resources>

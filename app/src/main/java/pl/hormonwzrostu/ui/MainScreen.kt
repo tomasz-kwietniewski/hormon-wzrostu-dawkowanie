@@ -49,6 +49,7 @@ import pl.hormonwzrostu.data.formatMg
 import pl.hormonwzrostu.data.nextDose
 import pl.hormonwzrostu.notify.isIgnoringBatteryOptimizations
 import pl.hormonwzrostu.notify.requestIgnoreBatteryOptimizations
+import pl.hormonwzrostu.util.ampouleHint
 import pl.hormonwzrostu.util.buildIntakeXlsx
 import pl.hormonwzrostu.util.shareBytes
 import java.time.LocalDate
@@ -155,9 +156,11 @@ fun MainScreen(
         val timeline = buildTimeline(schedule, intake, doses, ampouleStarts)
         val event = timeline.firstOrNull { it.date == date }
         // Planowana dawka dla tego dnia: z przebiegu (gdy podano) lub projekcja na ten dzień.
-        val plannedMg = event?.plannedMg
-            ?: nextDose(schedule, intake, doses, date, ampouleStarts)?.plannedMg
-            ?: schedule.dailyDoseMg
+        val projected = nextDose(schedule, intake, doses, date, ampouleStarts)
+        val plannedMg = event?.plannedMg ?: projected?.plannedMg ?: schedule.dailyDoseMg
+        val dayState = event?.ampouleState ?: projected?.ampouleState
+        val dayRemaining = event?.remainingBeforeMg ?: projected?.remainingBeforeMg ?: 0.0
+        val dayHint = dayState?.let { ampouleHint(LocalContext.current, it, dayRemaining) }
         // Nawigacja w zakresie start ... dziś (przyszłych dni nie ma po co edytować).
         val start = schedule.startDate()
         val canPrev = start != null && date.isAfter(start)
@@ -169,6 +172,7 @@ fun MainScreen(
             status = status,
             dayInCycle = event?.dayInCycle,
             plannedMg = plannedMg,
+            ampouleHintText = dayHint,
             actualMg = doses[date.toString()],
             initialComment = comments[date.toString()] ?: "",
             isAmpouleStart = ampouleStarts.contains(date.toString()),
@@ -251,7 +255,10 @@ private fun TodayDoseCard(
     val next = if (event == null) nextDose(schedule, intake, doses, today, ampouleStarts) else null
     val dayInCycle = event?.dayInCycle ?: next?.dayInCycle
     val shownDose = event?.actualMg ?: next?.plannedMg
-    val isLast = event?.isLastInCycle ?: next?.isLastInCycle ?: false
+    // Stan ampułki tylko informuje — proponowana dawka zostaje dzienną.
+    val ampouleState = event?.ampouleState ?: next?.ampouleState
+    val remainingBefore = event?.remainingBeforeMg ?: next?.remainingBeforeMg ?: 0.0
+    val hint = ampouleState?.let { ampouleHint(LocalContext.current, it, remainingBefore) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -291,9 +298,9 @@ private fun TodayDoseCard(
                     ),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                if (isLast) {
+                if (hint != null) {
                     Text(
-                        stringResource(R.string.last_dose_warning),
+                        hint,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                     )

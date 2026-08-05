@@ -251,6 +251,8 @@ fun DayEditDialog(
     status: DayStatus,
     dayInCycle: Int?,
     plannedMg: Double,
+    /** Podpowiedź o stanie ampułki; null, gdy zapas jest zwykły. */
+    ampouleHintText: String?,
     actualMg: Double?,
     initialComment: String,
     isAmpouleStart: Boolean,
@@ -373,6 +375,15 @@ fun DayEditDialog(
                         ),
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    // Stan ampułki — informacja obok pola, nigdy nie podmienia wpisanej dawki.
+                    if (ampouleHintText != null) {
+                        Text(
+                            ampouleHintText,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.tertiary,
+                        )
+                    }
                 }
 
                 OutlinedTextField(
