@@ -14,6 +14,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val repository = ScheduleRepository(app)
 
+    init {
+        // Musi wyprzedzić odczyt stanu poniżej — migracja dopisuje granice ampułek.
+        repository.migrateAmpouleAnchorsIfNeeded()
+    }
+
     var schedule by mutableStateOf(repository.load())
         private set
 

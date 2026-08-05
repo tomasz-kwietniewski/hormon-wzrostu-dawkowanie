@@ -6,17 +6,20 @@ import android.content.Intent
 import pl.hormonwzrostu.R
 import pl.hormonwzrostu.data.ScheduleRepository
 import pl.hormonwzrostu.data.formatMg
+import pl.hormonwzrostu.util.ampouleHint
 import java.time.LocalDate
 
 /** Odbiera dzienny alarm: pokazuje powiadomienie o dawce i planuje kolejny dzień. */
 class ReminderReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        val schedule = ScheduleRepository(context).load()
+        val repo = ScheduleRepository(context)
+        // Powiadomienie może wyprzedzić pierwsze otwarcie aplikacji po aktualizacji.
+        repo.migrateAmpouleAnchorsIfNeeded()
+        val schedule = repo.load()
 
         if (schedule.enabled && schedule.isValid()) {
             val today = LocalDate.now()
-            val repo = ScheduleRepository(context)
             val next = pl.hormonwzrostu.data.nextDose(
                 schedule, repo.loadIntake(), repo.loadDoses(), today, repo.loadAmpouleStarts(),
             )
@@ -26,8 +29,8 @@ class ReminderReceiver : BroadcastReceiver() {
                     schedule.childName,
                     formatMg(next.plannedMg),
                 )
-                val medLine = schedule.medName +
-                    if (next.isLastInCycle) context.getString(R.string.notif_last_suffix) else ""
+                val hint = ampouleHint(context, next.ampouleState, next.remainingBeforeMg)
+                val medLine = schedule.medName + (hint?.let { "\n" + it } ?: "")
                 val text = context.getString(
                     R.string.notif_text,
                     next.dayInCycle,

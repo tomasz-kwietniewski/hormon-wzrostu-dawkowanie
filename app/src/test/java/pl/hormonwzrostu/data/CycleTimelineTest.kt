@@ -1,7 +1,6 @@
 package pl.hormonwzrostu.data
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -19,25 +18,46 @@ class CycleTimelineTest {
     }
 
     @Test
-    fun equalDivision_noRemainder_rollsOverAfter20() {
-        val tl = buildTimeline(sched(10.0, 0.5), dates("2026-01-01", 21), emptyMap())
-        assertEquals(21, tl.size)
-        assertTrue(tl.take(20).all { it.cycleNumber == 1 })
-        assertEquals(20, tl[19].dayInCycle)
-        assertTrue(tl[19].isLastInCycle)
-        assertEquals(2, tl[20].cycleNumber)
-        assertEquals(1, tl[20].dayInCycle)
-        tl.forEach { assertEquals(0.5, it.plannedMg, 1e-9) }
+    fun plannedDoseIsAlwaysDaily_regardlessOfAmpouleState() {
+        // 10 mg / 0,8 — nawet gdy w ampułce zostaje 1,2 mg albo 0,4 mg, proponujemy 0,8.
+        val tl = buildTimeline(sched(10.0, 0.8), dates("2026-01-01", 14), emptyMap())
+        assertEquals(14, tl.size)
+        tl.forEach { assertEquals(0.8, it.plannedMg, 1e-9) }
+        tl.forEach { assertEquals(0.8, it.actualMg, 1e-9) }
     }
 
     @Test
-    fun standardRemainder_lastDayIsRest() {
-        val tl = buildTimeline(sched(10.0, 0.8), dates("2026-01-01", 12), emptyMap())
-        assertEquals(12, tl.size)
-        (0..10).forEach { assertEquals(0.8, tl[it].plannedMg, 1e-9) }
-        assertEquals(1.2, tl[11].plannedMg, 1e-9)
-        assertEquals(12, tl[11].dayInCycle)
-        assertTrue(tl[11].isLastInCycle)
+    fun ampouleState_thresholds() {
+        val tl = buildTimeline(sched(10.0, 0.8), dates("2026-01-01", 14), emptyMap())
+        // Zapas przed dawką: dzień 11 -> 2,0; dzień 12 -> 1,2; dzień 13 -> 0,4; dzień 14 -> -0,4.
+        assertEquals(AmpouleState.NORMAL, tl[10].ampouleState)
+        assertEquals(2.0, tl[10].remainingBeforeMg, 1e-9)
+        assertEquals(AmpouleState.LAST_FULL, tl[11].ampouleState)
+        assertEquals(1.2, tl[11].remainingBeforeMg, 1e-9)
+        assertEquals(AmpouleState.REMNANT, tl[12].ampouleState)
+        assertEquals(0.4, tl[12].remainingBeforeMg, 1e-9)
+        assertEquals(AmpouleState.EMPTY, tl[13].ampouleState)
+        assertEquals(-0.4, tl[13].remainingBeforeMg, 1e-9)
+    }
+
+    @Test
+    fun exhaustedAmpoule_doesNotStartNewCycle() {
+        // Rdzeń poprawki: bez ręcznego oznaczenia licznik idzie dalej, choć ampułka „pusta".
+        val tl = buildTimeline(sched(10.0, 0.8), dates("2026-01-01", 20), emptyMap())
+        assertTrue(tl.all { it.cycleNumber == 1 })
+        assertEquals(20, tl.last().dayInCycle)
+        assertEquals(AmpouleState.EMPTY, tl.last().ampouleState)
+    }
+
+    @Test
+    fun equalDivision_noRemainder_stillNoAutoRollover() {
+        // 10 mg / 0,5 dzieli się równo na 20 dni — 21. dzień to wciąż ta sama ampułka.
+        val tl = buildTimeline(sched(10.0, 0.5), dates("2026-01-01", 21), emptyMap())
+        assertEquals(21, tl.size)
+        assertTrue(tl.all { it.cycleNumber == 1 })
+        assertEquals(21, tl[20].dayInCycle)
+        assertEquals(AmpouleState.EMPTY, tl[20].ampouleState)
+        tl.forEach { assertEquals(0.5, it.plannedMg, 1e-9) }
     }
 
     @Test
@@ -52,34 +72,66 @@ class CycleTimelineTest {
         val intake = setOf("2026-01-01", "2026-01-02", "2026-01-05", "2026-01-09")
         val nd1 = nextDose(sched(10.0, 0.8), intake, emptyMap(), LocalDate.parse("2026-01-10"))!!
         assertEquals(5, nd1.dayInCycle)
-        // Kolejny dzień bez podania — wciąż dzień 5 (rdzeń poprawki użytkownika).
+        // Kolejny dzień bez podania — wciąż dzień 5 (rdzeń wcześniejszej poprawki użytkownika).
         val nd2 = nextDose(sched(10.0, 0.8), intake, emptyMap(), LocalDate.parse("2026-01-11"))!!
         assertEquals(5, nd2.dayInCycle)
     }
 
     @Test
-    fun correctionDown_addsLeftoverDay_sameAmpoule() {
-        val doses = mapOf("2026-01-12" to 0.8) // dzień 12: podano 0,8 zamiast planowanych 1,2
-        val tl12 = buildTimeline(sched(10.0, 0.8), dates("2026-01-01", 12), doses)
-        assertEquals(0.8, tl12[11].actualMg, 1e-9)
-        assertFalse(tl12[11].isLastInCycle) // zostaje 0,4 mg
-
-        val tl13 = buildTimeline(sched(10.0, 0.8), dates("2026-01-01", 13), doses)
-        assertEquals(13, tl13.size)
-        assertEquals(1, tl13[12].cycleNumber) // wciąż ta sama ampułka
-        assertEquals(13, tl13[12].dayInCycle)
-        assertEquals(0.4, tl13[12].plannedMg, 1e-9) // resztka
-        assertTrue(tl13[12].isLastInCycle)
+    fun biggerDose_consumesFaster_butKeepsSameAmpoule() {
+        // Dociągnięcie całej resztki (1,2 mg) w dniu 12 domyka zapas, ale nie numeruje od nowa.
+        val doses = mapOf("2026-01-12" to 1.2)
+        val tl = buildTimeline(sched(10.0, 0.8), dates("2026-01-01", 13), doses)
+        assertEquals(1.2, tl[11].actualMg, 1e-9)
+        assertEquals(0.8, tl[11].plannedMg, 1e-9)
+        assertEquals(0.0, tl[12].remainingBeforeMg, 1e-9)
+        assertEquals(AmpouleState.EMPTY, tl[12].ampouleState)
+        assertEquals(1, tl[12].cycleNumber)
+        assertEquals(13, tl[12].dayInCycle)
     }
 
     @Test
-    fun overdose_closesAmpoule_noNegative_nextIsNewCycle() {
-        val doses = mapOf("2026-01-12" to 2.0) // więcej niż resztka 1,2
+    fun overdose_doesNotCloseAmpouleByItself() {
+        val doses = mapOf("2026-01-12" to 2.0) // więcej, niż w ampułce zostało
         val tl = buildTimeline(sched(10.0, 0.8), dates("2026-01-01", 13), doses)
-        assertTrue(tl[11].isLastInCycle)
-        assertEquals(2, tl[12].cycleNumber)
-        assertEquals(1, tl[12].dayInCycle)
-        assertTrue(tl.all { it.plannedMg >= 0.0 && it.actualMg >= 0.0 })
+        assertEquals(1, tl[12].cycleNumber)
+        assertEquals(13, tl[12].dayInCycle)
+        assertEquals(AmpouleState.EMPTY, tl[12].ampouleState)
+        assertTrue(tl.all { it.plannedMg > 0.0 && it.actualMg > 0.0 })
+    }
+
+    /**
+     * Realny przebieg z eksportu 2026-08-05: z ampułki idzie więcej dawek, niż wynika
+     * z pojemności, a nowy cykl otwiera dopiero ręczne oznaczenie (2026-08-04).
+     */
+    @Test
+    fun realCourse_noAutoRollover_dayKeepsCounting() {
+        val intake = setOf(
+            "2026-07-19", "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23",
+            "2026-07-24", "2026-07-25", "2026-07-26", "2026-07-27", "2026-07-28",
+            // 2026-07-29 — pominięte (nocowanka)
+            "2026-07-30", "2026-07-31",
+            // 2026-08-01 — pominięte (wyjazd)
+            "2026-08-02", "2026-08-03", "2026-08-04",
+        )
+        val doses = mapOf("2026-08-03" to 0.2, "2026-08-04" to 1.2)
+        val tl = buildTimeline(
+            sched(10.0, 0.8, "2026-07-19"), intake, doses, setOf("2026-08-04"),
+        ).associateBy { it.date.toString() }
+
+        assertEquals(12, tl["2026-07-31"]!!.dayInCycle)
+        assertEquals(AmpouleState.LAST_FULL, tl["2026-07-31"]!!.ampouleState)
+        assertEquals(13, tl["2026-08-02"]!!.dayInCycle)
+        assertEquals(AmpouleState.REMNANT, tl["2026-08-02"]!!.ampouleState)
+        // Końcówka ampułki — wciąż ta sama ampułka, dzień 14.
+        assertEquals(14, tl["2026-08-03"]!!.dayInCycle)
+        assertEquals(1, tl["2026-08-03"]!!.cycleNumber)
+        assertEquals(AmpouleState.EMPTY, tl["2026-08-03"]!!.ampouleState)
+        // Dopiero ręczne oznaczenie otwiera nową ampułkę — pełny zapas i dzień 1.
+        assertEquals(1, tl["2026-08-04"]!!.dayInCycle)
+        assertEquals(2, tl["2026-08-04"]!!.cycleNumber)
+        assertEquals(10.0, tl["2026-08-04"]!!.remainingBeforeMg, 1e-9)
+        assertEquals(AmpouleState.NORMAL, tl["2026-08-04"]!!.ampouleState)
     }
 
     @Test
@@ -88,17 +140,30 @@ class CycleTimelineTest {
         assertEquals(1, nd.cycleNumber)
         assertEquals(1, nd.dayInCycle)
         assertEquals(0.8, nd.plannedMg, 1e-9)
-        assertFalse(nd.isLastInCycle)
+        assertEquals(AmpouleState.NORMAL, nd.ampouleState)
         assertTrue(buildTimeline(sched(), emptySet(), emptyMap()).isEmpty())
     }
 
     @Test
-    fun nextDose_lastSlot_isLastInCycleTrue() {
-        // 10 mg / 0,8 → 11 dni po 0,8; dzień 12 = reszta 1,2 (ostatni w ampułce).
-        val nd = nextDose(sched(10.0, 0.8), dates("2026-01-01", 11), emptyMap(), LocalDate.parse("2026-01-12"))!!
+    fun nextDose_lastFullSlot_signalsLeftover() {
+        // Po 11 podaniach po 0,8 zostaje 1,2 mg: proponujemy 0,8, ale sygnalizujemy resztkę.
+        val nd = nextDose(
+            sched(10.0, 0.8), dates("2026-01-01", 11), emptyMap(), LocalDate.parse("2026-01-12"),
+        )!!
         assertEquals(12, nd.dayInCycle)
-        assertEquals(1.2, nd.plannedMg, 1e-9)
-        assertTrue(nd.isLastInCycle)
+        assertEquals(0.8, nd.plannedMg, 1e-9)
+        assertEquals(1.2, nd.remainingBeforeMg, 1e-9)
+        assertEquals(AmpouleState.LAST_FULL, nd.ampouleState)
+    }
+
+    @Test
+    fun nextDose_afterExhaustion_isEmptyStateNotNewCycle() {
+        val nd = nextDose(
+            sched(10.0, 0.8), dates("2026-01-01", 13), emptyMap(), LocalDate.parse("2026-01-14"),
+        )!!
+        assertEquals(1, nd.cycleNumber)
+        assertEquals(14, nd.dayInCycle)
+        assertEquals(AmpouleState.EMPTY, nd.ampouleState)
     }
 
     @Test
@@ -108,10 +173,10 @@ class CycleTimelineTest {
         val tl = buildTimeline(sched(10.0, 0.8), dates("2026-01-01", 7), emptyMap(), anchor)
         assertEquals(listOf(1, 2, 3, 4), tl.take(4).map { it.dayInCycle })
         assertTrue(tl.take(4).all { it.cycleNumber == 1 })
-        // 2026-01-05: re-kotwica -> dzień 1 nowej (drugiej) ampułki, dawka znów 0,8.
+        // 2026-01-05: re-kotwica -> dzień 1 nowej (drugiej) ampułki, pełny zapas.
         assertEquals(2, tl[4].cycleNumber)
         assertEquals(1, tl[4].dayInCycle)
-        assertEquals(0.8, tl[4].plannedMg, 1e-9)
+        assertEquals(10.0, tl[4].remainingBeforeMg, 1e-9)
         assertEquals(2, tl[5].dayInCycle)
         assertEquals(2, tl[6].cycleNumber)
     }
@@ -138,7 +203,7 @@ class CycleTimelineTest {
         assertEquals(2, nd.cycleNumber)
         assertEquals(1, nd.dayInCycle)
         assertEquals(0.8, nd.plannedMg, 1e-9)
-        assertFalse(nd.isLastInCycle)
+        assertEquals(AmpouleState.NORMAL, nd.ampouleState)
     }
 
     @Test

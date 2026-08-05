@@ -80,6 +80,19 @@ class ScheduleRepository(context: Context) {
         prefs.edit().putString(KEY_SITES, json.encodeToString(sites)).apply()
     }
 
+    /**
+     * Utrwala granice ampułek, które stara logika wyznaczała sama (przy wyczerpaniu
+     * zapasu), tak by nowa reguła „nową ampułkę otwiera wyłącznie ręczne oznaczenie"
+     * nie przenumerowała historii wstecz. Wykonuje się raz — patrz [legacyAutoAnchors].
+     */
+    fun migrateAmpouleAnchorsIfNeeded() {
+        if (prefs.getBoolean(KEY_ANCHOR_MIGRATION, false)) return
+        val existing = loadAmpouleStarts()
+        val added = legacyAutoAnchors(load(), loadIntake(), loadDoses(), existing)
+        if (added.isNotEmpty()) saveAmpouleStarts(existing + added)
+        prefs.edit().putBoolean(KEY_ANCHOR_MIGRATION, true).apply()
+    }
+
     /** Wybrany język UI: "" = systemowy, "pl", "en". */
     fun loadLang(): String = prefs.getString(KEY_LANG, "") ?: ""
 
@@ -91,7 +104,7 @@ class ScheduleRepository(context: Context) {
     fun exportBackup(): String =
         json.encodeToString(
             Backup(
-                version = 4,
+                version = ANCHOR_MODEL_VERSION,
                 schedule = load(),
                 intake = loadIntake(),
                 comments = loadComments(),
@@ -114,6 +127,12 @@ class ScheduleRepository(context: Context) {
         saveSkipped(backup.skipped)
         saveAmpouleStarts(backup.ampouleStarts)
         saveSites(backup.sites)
+        // Kopie sprzed wersji 5 pochodzą z modelu z auto-przeskokiem cyklu — ich granice
+        // ampułek trzeba utrwalić tak samo jak przy aktualizacji aplikacji.
+        if (backup.version < ANCHOR_MODEL_VERSION) {
+            prefs.edit().putBoolean(KEY_ANCHOR_MIGRATION, false).apply()
+            migrateAmpouleAnchorsIfNeeded()
+        }
     }.isSuccess
 
     companion object {
@@ -125,6 +144,10 @@ class ScheduleRepository(context: Context) {
         private const val KEY_DOSES = "intake_doses"
         private const val KEY_SKIPPED = "intake_skipped"
         private const val KEY_AMPOULE_STARTS = "ampoule_starts"
+        private const val KEY_ANCHOR_MIGRATION = "ampoule_anchor_migration_v2"
+
+        /** Pierwsza wersja kopii zapisana już w modelu bez auto-przeskoku cyklu. */
+        private const val ANCHOR_MODEL_VERSION = 5
         private const val KEY_SITES = "intake_sites"
         private val json = Json {
             ignoreUnknownKeys = true

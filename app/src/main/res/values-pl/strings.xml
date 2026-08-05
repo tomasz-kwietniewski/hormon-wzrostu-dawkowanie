@@ -14,7 +14,10 @@
     <string name="cycle_not_started">Cykl jeszcze się nie rozpoczął (data startu w przyszłości).</string>
     <string name="day_of_cycle">%1$s • dzień %2$d/%3$d</string>
     <string name="day_of_cycle_est">%1$s • dzień %2$d/~%3$d</string>
-    <string name="last_dose_warning">⚠ Ostatnia dawka z ampułki — jutro otwórz nową.</string>
+    <!-- Podpowiedzi o stanie ampułki — karta dnia, dialog edycji i powiadomienie. -->
+    <string name="ampoule_last_full">⚠ W ampułce jest jeszcze %1$s mg - możesz podać całość i zamknąć ampułkę.</string>
+    <string name="ampoule_remnant">⚠ W ampułce zostało ok. %1$s mg - to już końcówka.</string>
+    <string name="ampoule_empty">⚠ Ampułka powinna być pusta. Po otwarciu nowej zaznacz „Nowa ampułka".</string>
     <string name="mg_value">%1$s mg</string>
     <string name="btn_mark_given">Oznacz: podano</string>
     <string name="btn_unmark_given">Cofnij (nie podano)</string>
@@ -122,5 +125,4 @@
     <string name="channel_desc">Codzienne przypomnienie o dawce leku o ustalonej godzinie.</string>
     <string name="notif_title">%1$s — dziś %2$s mg</string>
     <string name="notif_text">Dzień %1$d/%2$d cyklu. %3$s</string>
-    <string name="notif_last_suffix">\n⚠ Ostatnia dawka z ampułki — jutro otwórz nową ampułkę.</string>
 </resources>

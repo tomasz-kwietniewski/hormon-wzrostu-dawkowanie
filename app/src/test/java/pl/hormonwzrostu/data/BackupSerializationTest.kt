@@ -39,6 +39,12 @@ class BackupSerializationTest {
     }
 
     @Test
+    fun defaultVersion_marksAnchorModel() {
+        // Wersja 5 = kopia zapisana już bez auto-przeskoku cyklu; starsze wymagają migracji.
+        assertEquals(5, Backup().version)
+    }
+
+    @Test
     fun oldJson_v2_withoutNewFields_decodesToEmpty() {
         val old = """{"version":2,"schedule":{},"intake":[],"comments":{},"lang":"","doses":{}}"""
         val back = json.decodeFromString<Backup>(old)
