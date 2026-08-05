@@ -102,7 +102,7 @@ Wszystkie materiały w katalogu [`play-assets/`](../play-assets/):
 - [ ] Ścieżka **Testy wewnętrzne** (Internal testing) — dodaj e-maile testerów (np. żona, inni rodzice);
       instalacja idzie ze Sklepu Play, więc działa też przy Google Advanced Protection.
 - [ ] Po testach: **Produkcja** (lub Testy zamknięte/otwarte).
-- [x] `versionCode`/`versionName` rosną z każdym wydaniem (w `app/build.gradle.kts`; obecnie **1.15 / 16**).
+- [x] `versionCode`/`versionName` rosną z każdym wydaniem (w `app/build.gradle.kts`; obecnie **1.23 / 24**).
 
 ## 10. Uwagi techniczne
 

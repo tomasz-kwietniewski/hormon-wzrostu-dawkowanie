@@ -17,19 +17,22 @@ Aplikacja jest **publicznie dostępna w Google Play**:
 
 **[play.google.com/store/apps/details?id=pl.hormonwzrostu](https://play.google.com/store/apps/details?id=pl.hormonwzrostu)**
 
-Wydawca: **Z Sensem Tomasz Kwietniewski** (konto organizacji). Aktualna wersja: **1.17**.
+Wydawca: **Z Sensem Tomasz Kwietniewski** (konto organizacji). Aktualna wersja: **1.23**.
 
 ## Funkcje
 
 - ⏰ **Codzienne powiadomienie** o wybranej godzinie (alarm typu „budzik", odporny na tryb Doze).
 - 🧮 **Cykl liczony według podań** — podajesz tylko pojemność ampułki i dawkę dzienną; aplikacja
-  prowadzi cykl na podstawie **faktycznie podanych dawek** i realnego zużycia ampułki. **Pominięty
-  dzień nie przesuwa cyklu** — ten sam dzień czeka, aż dawka zostanie podana. Ostatni dzień dostaje
-  „resztę" z ampułki (dawka ostatniego dnia mieści się w ⟨dawka, 2 × dawka)).
+  prowadzi cykl na podstawie **faktycznie podanych dawek**. **Pominięty dzień nie przesuwa cyklu**
+  — ten sam dzień czeka, aż dawka zostanie podana.
+- 💉 **Nową ampułkę zaczynasz Ty** — dzień 1 pojawia się dopiero po zaznaczeniu „Nowa ampułka od
+  tego dnia". Dozownik bywa niedokładny i z ampułki idzie zwykle więcej dawek, niż wynika
+  z pojemności, więc licznik spokojnie leci dalej: 13., 14. dzień. Aplikacja proponuje **zawsze
+  dawkę dzienną** i osobno podpowiada, ile w ampułce zostało — także w powiadomieniu.
 - ✅ **Śledzenie podań** — przycisk „Podano" na dziś oraz edycja dowolnego dnia w kalendarzu
   (podano / nie podano), także wstecz.
 - ✏️ **Korekta podanej dawki** — jeśli danego dnia podasz inną dawkę niż z rozpiski (np. mniejszą),
-  zapiszesz to w oknie dnia; wpływa to na realne zużycie ampułki i moment zakończenia cyklu.
+  zapiszesz to w oknie dnia; wpływa to na wyliczany zapas w ampułce.
 - 📝 **Komentarz do dnia** — opcjonalne pole (np. powód pominięcia, okoliczności podania).
 - 📅 **Historia (kalendarz) na ekranie głównym** — miesiąc z kolorami: podano (zielony),
   pominięto (czerwony), dziś (bursztyn), później (szary), plus licznik podano/pominięto;
@@ -42,15 +45,16 @@ Wydawca: **Z Sensem Tomasz Kwietniewski** (konto organizacji). Aktualna wersja: 
   Sama nazwa aplikacji (etykieta skrótu na pulpicie) jest zawsze po polsku — to nazwa marki.
 - 🔒 **Prywatność** — dane wyłącznie lokalnie na urządzeniu, brak konta, brak sieci.
 
-### Przykładowe schematy (suma zawsze = pojemność ampułki, np. 10 mg)
+### Na ile dni starcza ampułka (pojemność 10 mg)
 
-| Dawka dzienna | Dni standardowe | Ostatni dzień | Dni / ampułkę |
-|---|---|---|---|
-| 0,6 mg | 15 | 1,0 mg | 16 |
-| 0,7 mg | 13 | 0,9 mg | 14 |
-| 0,8 mg | 11 | 1,2 mg | 12 |
+| Dawka dzienna | Dni z pojemności | Praktyka |
+|---|---|---|
+| 0,6 mg | ~16 | zwykle wychodzi dzień-dwa więcej |
+| 0,7 mg | ~14 | j.w. |
+| 0,8 mg | ~12 | realnie 13, czasem 14 dni |
 
-W aplikacji wpisujesz tylko pojemność (10 mg) i dawkę dzienną — długość cyklu i ostatnią dawkę policzy sama.
+Wpisujesz tylko pojemność (10 mg) i dawkę dzienną. Liczba dni jest **szacunkiem** (stąd „dzień 12/~12")
+— o tym, kiedy ampułka faktycznie się skończy, decydujesz Ty, oznaczając nową.
 
 ## Wymagania
 

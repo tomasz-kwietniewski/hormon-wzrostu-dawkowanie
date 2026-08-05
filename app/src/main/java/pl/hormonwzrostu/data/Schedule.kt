@@ -8,17 +8,18 @@ import java.time.LocalDate
 /**
  * Schemat dawkowania jednego leku.
  *
- * Model „auto-liczenia ostatniego dnia": z jednej ampułki o pojemności [ampouleMg]
- * podajemy pełną [dailyDoseMg] każdego dnia, a ostatniego dnia cyklu podajemy resztę
- * z ampułki. Długość cyklu [daysPerCycle] NIE jest wpisywana ręcznie — wynika
- * wyłącznie z pojemności i dawki dziennej (patrz [computeCycleDays]). Po [daysPerCycle]
- * dniach cykl startuje od nowa (kolejna ampułka).
+ * Każdego dnia podajemy pełną [dailyDoseMg] — także wtedy, gdy w ampułce zostaje mniej.
+ * [daysPerCycle] to wyłącznie **szacunek**, na ile dni starcza pojemność [ampouleMg]
+ * (patrz [computeCycleDays]); służy za mianownik w „dzień 12/~12" i za opis schematu
+ * w ustawieniach. Nie zamyka cyklu: nową ampułkę otwiera dopiero ręczne oznaczenie
+ * użytkownika (re-kotwica w `CycleTimeline.walk`), bo dozownik bywa niedokładny
+ * i realnie z ampułki idzie więcej dawek, niż wynika z pojemności.
  *
- * Przykłady (pojemność 10 mg) — liczone automatycznie:
- *  - 0,6 mg → 16 dni (15 × 0,6 + 1,0)
- *  - 0,7 mg → 14 dni (13 × 0,7 + 0,9)
- *  - 0,8 mg → 12 dni (11 × 0,8 + 1,2)
- *  - 0,5 mg → 20 dni (20 × 0,5; dzieli się równo)
+ * Szacunki (pojemność 10 mg):
+ *  - 0,6 mg → ~16 dni
+ *  - 0,7 mg → ~14 dni
+ *  - 0,8 mg → ~12 dni (w praktyce 13, czasem 14)
+ *  - 0,5 mg → ~20 dni (dzieli się równo)
  */
 @Serializable
 data class Schedule(
@@ -32,13 +33,16 @@ data class Schedule(
     val reminderMinute: Int = 0,
     val enabled: Boolean = true,
 ) {
-    /** Długość cyklu (liczba dni z jednej ampułki) — wyliczana z pojemności i dawki dziennej. */
+    /** Szacowana długość cyklu — na ile dni starcza pojemność przy dawce dziennej. */
     val daysPerCycle: Int get() = computeCycleDays(ampouleMg, dailyDoseMg)
 
-    /** Liczba dni ze standardową dawką (wszystkie poza ostatnim). */
+    /** Liczba dni ze standardową dawką (wszystkie poza ostatnim z pojemności). */
     val regularDays: Int get() = (daysPerCycle - 1).coerceAtLeast(0)
 
-    /** Dawka ostatniego dnia = reszta z ampułki. */
+    /**
+     * Reszta pojemności po [regularDays] pełnych dawkach — opis schematu w ustawieniach.
+     * Aplikacja NIE proponuje jej jako dawki; to zawsze [dailyDoseMg].
+     */
     val lastDayDoseMg: Double get() = ampouleMg - regularDays * dailyDoseMg
 
     fun startDate(): LocalDate? =
