@@ -3,8 +3,9 @@
 Praktyczna lista kontrolna i gotowe teksty do wystawienia aplikacji **Hormon Wzrostu Dawkowanie**
 w Sklepie Play.
 
-> **STATUS (2026-06-15): OPUBLIKOWANA PUBLICZNIE na produkcji** — 177 krajów, wersja 1.15,
-> wydawana z **konta organizacji** (Z Sensem Tomasz Kwietniewski).
+> **STATUS (2026-08-06): na produkcji wersja 1.23 (versionCode 24)** — zatwierdzona przez Google
+> i wdrożona. Aplikacja publicznie dostępna w 177 krajach, wydawana z **konta organizacji**
+> (Z Sensem Tomasz Kwietniewski) nieprzerwanie od pierwszej publikacji 2026-06-15 (wtedy 1.15).
 > Link: https://play.google.com/store/apps/details?id=pl.hormonwzrostu
 > Najważniejszy wniosek z procesu (konto organizacji dla aplikacji zdrowotnej) — patrz **sekcja 11**.
 
@@ -132,3 +133,22 @@ odrzucane („Violation of Play Console Requirements", polityka od 31.08.2024). 
 - ⏳ **Synchronizacja statusu organizacji w systemach egzekwujących trwa do 72 h** (potwierdził
   support Play). Wysłanie ponownie PRZED upływem 72 h → kolejne automatyczne odrzucenia (to nie błąd!).
   Po 72 h i wysłaniu z **podbitym versionCode** → recenzja przeszła, aplikacja opublikowana publicznie.
+
+## 12. Android developer verification (termin 30.09.2026) — spełnione, bez akcji
+
+Google wymaga, by do **30 września 2026** każda aplikacja na Play miała zarejestrowaną parę
+**nazwa pakietu + klucz podpisu**; niezarejestrowane apki mają zniknąć z Play globalnie. Rozsyłane
+w tej sprawie maile („Register your apps and signing keys") to wysyłka masowa, nie sygnał o problemie.
+
+Ta aplikacja jest **zarejestrowana automatycznie** — Play Console → **Android developer verification**
+→ zakładka *Package names*: `pl.hormonwzrostu` = **Registered**, 1 klucz, wpis z 1 czerwca 2026.
+Powód: dystrybucja idzie przez AAB, więc kluczem dystrybucyjnym zarządza **Play App Signing**, a to
+właśnie te klucze Google zarejestrował sam (ponad 99% aplikacji).
+
+Czego robić **nie trzeba**:
+
+- rejestrować `release.keystore` z sekretów CI — to klucz **upload**, nigdy nie trafia do użytkowników,
+- rejestrować aplikacji dystrybuowanych poza Play — takich tu nie ma (jedyny kanał to Sklep Play).
+
+Gdyby kiedyś pojawiła się dystrybucja poza Play (sideload, inny sklep), obie te rzeczy trzeba
+dorejestrować na tej samej stronie — osobne konto Android Developer Console nie jest potrzebne.

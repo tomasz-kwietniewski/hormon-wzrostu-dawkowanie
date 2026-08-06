@@ -121,7 +121,8 @@ repozytorium; lokalnie bez nich build debug używa domyślnego klucza debug.
 
 ✅ **Opublikowana publicznie** na produkcji (czerwiec 2026), w 177 krajach, wydawana z **konta
 organizacji** — aplikacje zdrowotne/medyczne mogą być publikowane wyłącznie z konta organizacji
-(nie osobistego). Plan, lista kontrolna i wnioski z całego procesu: [docs/PLAY_STORE.md](docs/PLAY_STORE.md).
+(nie osobistego). Na produkcji jest obecnie **1.23 (versionCode 24)**, zatwierdzona przez Google
+w sierpniu 2026. Plan, lista kontrolna i wnioski z całego procesu: [docs/PLAY_STORE.md](docs/PLAY_STORE.md).
 Polityka prywatności: [PRIVACY.md](PRIVACY.md).
 
 ## Licencja
